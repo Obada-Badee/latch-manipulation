@@ -1,0 +1,11 @@
+condition,task,tier,trial,seed,command,success,detail,planner_said,agreement,outcome,wall_s,iterations,tool_calls,in_tokens,out_tokens,objects_in_play,induced,induced_detail,void_reason
+full,e1,complex,0,1000,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,0,"red in red_bin, blue in None",1,0,wrong,300.4,8,6,28026,3670,9,,,
+full,e2,complex,0,1000,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in None, green in None",0,1,wrong,604.7,14,11,42466,7870,9,,,
+full,e1,complex,1,1001,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,148.3,4,2,11561,415,9,,,
+full,e2,complex,1,1001,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in blue_bin, green in None",0,1,wrong,294.1,10,8,32379,4110,9,,,
+full,e1,complex,2,1002,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,186.2,7,5,21008,1895,9,,,
+full,e2,complex,2,1002,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,1,both in blue_bin,1,1,ok,110.4,4,2,10180,355,9,,,
+full,e1,complex,3,1003,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,97.1,6,4,19082,1140,9,,,
+full,e2,complex,3,1003,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,1,both in blue_bin,0,0,ok,1997.6,29,26,123283,15850,9,,,
+full,e1,complex,4,1004,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,111.7,4,2,11084,450,9,,,
+full,e2,complex,4,1004,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in None, green in blue_bin",1,0,wrong,179.5,4,2,12206,480,9,,,

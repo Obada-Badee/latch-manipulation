@@ -1,0 +1,11 @@
+condition,task,tier,trial,seed,command,success,detail,planner_said,agreement,outcome,wall_s,iterations,tool_calls,in_tokens,out_tokens,objects_in_play,induced,induced_detail,void_reason
+no_memory,e1,complex,0,1000,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,0,"red in None, blue in red_bin",1,0,wrong,954.0,4,3,11730,1620,9,,,
+no_memory,e2,complex,0,1000,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in blue_bin, green in None",0,1,wrong,191.5,2,1,5032,385,9,,,
+no_memory,e1,complex,1,1001,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,0,"red in None, blue in None",0,1,wrong,200.3,3,2,8061,1040,9,,,
+no_memory,e2,complex,1,1001,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in blue_bin, green in None",0,1,wrong,264.3,4,2,8064,1030,9,,,
+no_memory,e1,complex,2,1002,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,330.8,8,7,24464,2375,9,,,
+no_memory,e2,complex,2,1002,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"different bins: red in blue_bin, green in red_bin",1,0,wrong,152.7,4,3,11004,1330,9,,,
+no_memory,e1,complex,3,1003,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,1,1,ok,178.8,6,5,16230,2435,9,,,
+no_memory,e2,complex,3,1003,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"different bins: red in blue_bin, green in red_bin",1,0,wrong,161.9,4,3,11107,1700,9,,,
+no_memory,e1,complex,4,1004,put the red cube in the red bin | now put the blue cube in the same bin as the red cube,1,both in red_bin,0,0,ok,229.3,4,3,11400,1835,9,,,
+no_memory,e2,complex,4,1004,put the red cube in the blue bin | where is the red cube now? | put the green cube in the same bin,0,"red in None, green in None",1,0,wrong,942.0,4,3,11090,1601,9,,,

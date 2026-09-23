@@ -1,0 +1,51 @@
+# MoveIt uses this configuration for controller management
+trajectory_execution:
+  allowed_execution_duration_scaling: 1.2
+  allowed_goal_duration_margin: 0.5
+
+  # Raised from 0.01. Before execution MoveIt checks that the robot's current
+  # joint state matches the planned trajectory's first point, and refuses with
+  #     Invalid Trajectory: start point deviates from current robot state
+  # if it does not. At 0.01 rad (0.57 deg) that threshold is tighter than this
+  # simulated arm can hold still.
+  #
+  # Time passes between planning and executing: STOMP is allowed 1.5 s
+  # (config/controller_setting.yaml), and the live cell runs at a real-time
+  # factor of ~0.5, so that is ~3 s of wall clock during which the arm sags -
+  # more so while holding a cube, which is why this bit `place` and not `pick`.
+  # The failure was intermittent exactly because the drift sometimes stayed
+  # under 0.01 and sometimes did not.
+  #
+  # 0.05 rad (2.9 deg) absorbs the sag while still catching a genuinely stale
+  # start state, which is what the check is for. Setting it to 0.0 would
+  # disable validation altogether - a common suggestion for simulation, and too
+  # blunt: it would also hide a plan made against a pose the robot never
+  # reached, which is a real bug this once had.
+  allowed_start_tolerance: 0.05
+
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+
+moveit_simple_controller_manager:
+  controller_names:
+    - panda_arm_controller
+    - panda_hand_controller
+
+  panda_arm_controller:
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: true
+    joints:
+      - panda_joint1
+      - panda_joint2
+      - panda_joint3
+      - panda_joint4
+      - panda_joint5
+      - panda_joint6
+      - panda_joint7
+
+  panda_hand_controller:
+    action_ns: gripper_cmd
+    type: GripperCommand
+    default: true
+    joints:
+      - panda_finger_joint1

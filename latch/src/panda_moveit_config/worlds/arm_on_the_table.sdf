@@ -1,0 +1,397 @@
+<?xml version="1.0" ?>
+<!--
+  Scene frame reference (all numbers below are WORLD frame).
+
+    panda_link0  sits at world (0.05, 0.00, 1.02)   -> link0 = world - (0.05, 0, 1.02)
+    table top    is at  world z = 1.015
+    camera       is at  link0 (0.20, 0.60, 0.70) looking straight down,
+                 hfov 1.8 rad, 640x480  ->  fx = fy = 253.936
+
+  Derived limits (verify before moving anything):
+    camera sees   link0 X -0.46..0.86   Y -0.28..1.48
+    table spans   link0 X -0.16..0.64   Y -0.75..0.75
+    comfortable arm reach: 0.35..0.70 m from link0 origin
+
+  Layout convention:
+    objects  live at +Y (robot's left)   - detected by YOLO, poses come from perception
+    bins     live at -Y (robot's right)  - static, poses are known constants, never detected
+
+  "left"/"right" in user commands are resolved in the LINK0 frame: +Y is left.
+  That convention is restated in the planner system prompt - keep the two in sync.
+-->
+<sdf version="1.6">
+  <world name="arm_and_table">
+    <scene>
+      <shadows>0</shadows>
+    </scene>
+
+    <gui>
+      <camera name="user_camera">
+        <pose>0.75 -0.75 1.4 0 0.29 2.21</pose>
+      </camera>
+    </gui>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <model name="table">
+      <static>true</static>
+      <include>
+        <uri>model://table</uri>
+      </include>
+      <pose>0.29 0 0 0 0 1.5708</pose>
+    </model>
+
+    <!-- ================= manipulable objects (+Y, robot's left) ================= -->
+
+    <!-- cubes: 40 mm. Gripper opens to a 60 mm gap, so 10 mm clearance per side. -->
+    <model name="cube_yellow_1">
+      <pose>0.50 0.20 1.035 0 0 0.35</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1.333e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>1.333e-5</iyy><iyz>0</iyz><izz>1.333e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <material>
+            <ambient>0.35 0.30 0.04 1</ambient>
+            <diffuse>0.90 0.80 0.10 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube_yellow_2">
+      <pose>0.30 0.42 1.035 0 0 -0.60</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1.333e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>1.333e-5</iyy><iyz>0</iyz><izz>1.333e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <material>
+            <ambient>0.35 0.30 0.04 1</ambient>
+            <diffuse>0.90 0.80 0.10 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube_red_1">
+      <pose>0.15 0.48 1.035 0 0 0.20</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1.333e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>1.333e-5</iyy><iyz>0</iyz><izz>1.333e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.85 0.10 0.10 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube_blue_1">
+      <pose>0.45 0.45 1.035 0 0 0.90</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1.333e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>1.333e-5</iyy><iyz>0</iyz><izz>1.333e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.10 0.20 0.85 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube_green_1">
+      <pose>0.10 0.62 1.035 0 0 -0.25</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1.333e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>1.333e-5</iyy><iyz>0</iyz><izz>1.333e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.04 0.04 0.04</size></box></geometry>
+          <material>
+            <ambient>0.04 0.26 0.08 1</ambient>
+            <diffuse>0.10 0.70 0.20 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- cylinder: r 20 mm, h 60 mm. Third class, so grounding must discriminate shape. -->
+    <model name="cylinder_red_1">
+      <pose>0.35 0.60 1.045 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>2.0e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>2.0e-5</iyy><iyz>0</iyz><izz>1.0e-5</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.02</radius><length>0.06</length></cylinder></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.02</radius><length>0.06</length></cylinder></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.85 0.10 0.10 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- bolts: unchanged from the original scene -->
+    <model name="bolt1">
+      <include>
+        <uri>model://bolt</uri>
+      </include>
+      <pose>0.5 0.35 1.05 0 1.5 0</pose>
+    </model>
+
+    <model name="bolt2">
+      <include>
+        <uri>model://bolt</uri>
+      </include>
+      <pose>0.25 0.63 1.05 0 -1.5 -2.82</pose>
+    </model>
+
+    <!-- Moved from (0.11, 0.53). A bolt is 116 mm long and cube_red_1 sits at
+         (0.15, 0.48), only 64 mm away, so this bolt settled *on top of* the red
+         cube and hid all but a sliver of it. Perception then reported 8 of 9
+         objects, and the missing one was the red cube - which the target
+         command ("...move the leftmost bolt next to the red cube") depends on.
+
+         Nothing was wrong with the detector: the cube genuinely was not
+         visible. Keep at least 150 mm between a bolt's centre and any other
+         object, since it can settle anywhere within its own half-length. -->
+    <model name="bolt3">
+      <include>
+        <uri>model://bolt</uri>
+      </include>
+      <pose>0.20 0.30 1.05 0 -1.5 -1.0</pose>
+    </model>
+
+    <!-- ================= destination bins (-Y, robot's right) =================
+         Static, never detected. These poses are the source of truth for the
+         `place` skill - keep them in sync with llm_task_planner's bin table.
+         Inner cavity 180 mm square, 50 mm walls; a 40 mm cube drops in easily. -->
+
+    <model name="red_bin">
+      <static>true</static>
+      <pose>0.33 -0.26 1.015 0 0 0</pose>
+      <link name="link">
+        <collision name="base">
+          <pose>0 0 0.0025 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.005</size></box></geometry>
+        </collision>
+        <visual name="base">
+          <pose>0 0 0.0025 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.005</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.80 0.12 0.12 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_xp">
+          <pose>0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_xp">
+          <pose>0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.80 0.12 0.12 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_xn">
+          <pose>-0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_xn">
+          <pose>-0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.80 0.12 0.12 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_yp">
+          <pose>0 0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_yp">
+          <pose>0 0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.80 0.12 0.12 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_yn">
+          <pose>0 -0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_yn">
+          <pose>0 -0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+          <material>
+            <ambient>0.32 0.04 0.04 1</ambient>
+            <diffuse>0.80 0.12 0.12 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="blue_bin">
+      <static>true</static>
+      <pose>0.57 -0.22 1.015 0 0 0</pose>
+      <link name="link">
+        <collision name="base">
+          <pose>0 0 0.0025 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.005</size></box></geometry>
+        </collision>
+        <visual name="base">
+          <pose>0 0 0.0025 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.005</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.12 0.22 0.80 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_xp">
+          <pose>0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_xp">
+          <pose>0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.12 0.22 0.80 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_xn">
+          <pose>-0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_xn">
+          <pose>-0.095 0 0.030 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.05</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.12 0.22 0.80 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_yp">
+          <pose>0 0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_yp">
+          <pose>0 0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.12 0.22 0.80 1</diffuse>
+          </material>
+        </visual>
+
+        <collision name="wall_yn">
+          <pose>0 -0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+        </collision>
+        <visual name="wall_yn">
+          <pose>0 -0.095 0.030 0 0 0</pose>
+          <geometry><box><size>0.18 0.01 0.05</size></box></geometry>
+          <material>
+            <ambient>0.04 0.07 0.32 1</ambient>
+            <diffuse>0.12 0.22 0.80 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <include>
+        <uri>model://ground_plane</uri>
+      </include>
+    </model>
+  </world>
+</sdf>

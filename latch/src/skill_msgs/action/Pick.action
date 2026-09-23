@@ -1,0 +1,19 @@
+# Grasp the object with this id from the latest world state and lift it.
+#
+# The id refers to /world_state, so the caller never supplies coordinates -
+# that keeps grounding (which object?) separate from control (how to reach it),
+# and means a stale plan fails loudly rather than moving to a stale pose.
+int32 object_id
+---
+# Result
+bool success
+string message          # human/LLM readable; on failure, WHY, in enough detail
+                        # to choose a different action next turn
+float64 finger_gap      # metres between the fingers after closing.
+                        # This is the grasp check: fully closed (~0.000) means
+                        # the jaw met nothing and the grasp missed; stalling at
+                        # roughly the object width means it holds something.
+                        # Without this the loop can only ever be optimistic.
+---
+# Feedback
+string stage            # approach | open | descend | close | verify | lift

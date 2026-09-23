@@ -1,0 +1,85 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="bolt">
+    <static>false</static>
+    <link name="link">
+      <inertial>
+        <mass>0.064</mass>
+        <inertia>
+          <ixx>0.000021715</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000021715</iyy>
+          <iyz>0</iyz>
+          <izz>0.00000178</izz>
+        </inertia>
+        <pose>0 0 0 0 0 0</pose>
+      </inertial>
+      <!-- Collision is two primitives, not the visual mesh, and that is deliberate.
+
+           With the STL as collision geometry the fingers penetrated the shaft:
+           a pick would carry the bolt to approach height while the finger joint
+           read 2.3 mm on a 24 mm shaft, so grasp verification called every
+           successful pick a failure. The mesh is also non-convex (hex head on a
+           cylinder), and five coincident bolt trimeshes have previously aborted
+           the physics server through dCollideTTL.
+
+           Dimensions are measured from the mesh vertices, not guessed:
+             shaft  r = 0.0120,  z in [-0.100, 0.000]
+             head   hex, circumradius 0.0219 / apothem 0.0190,
+                    z in [0.000, +0.016]
+           The head is approximated by the equal-area cylinder (r = 0.0199),
+           so it rests on the table at about the right height either way up.
+           The shaft - the only part the gripper ever closes on - is exact. -->
+      <collision name="collision_shaft">
+        <pose>0 0 -0.05 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.024 0.024 0.100</size>
+          </box>
+        </geometry>
+        <surface>
+          <bounce>
+            <restitution_coefficient>0</restitution_coefficient>
+            <threshold>0.01</threshold>
+          </bounce>
+          <friction>
+            <ode>
+              <mu>1.2</mu>
+              <mu2>1.2</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <collision name="collision_head">
+        <pose>0 0 0.008 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0199</radius>
+            <length>0.016</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <bounce>
+            <restitution_coefficient>0</restitution_coefficient>
+            <threshold>0.01</threshold>
+          </bounce>
+          <friction>
+            <ode>
+              <mu>1.2</mu>
+              <mu2>1.2</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://bolt/meshes/bolt.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

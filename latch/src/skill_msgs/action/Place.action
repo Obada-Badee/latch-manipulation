@@ -1,0 +1,16 @@
+# Release the currently held object at a destination.
+#
+# Two addressing modes, because the planner needs both "put it in the red bin"
+# and "put it next to the red cube":
+#   target non-empty -> a named receptacle from the world state ("red_bin")
+#   target empty     -> the explicit (x, y) below, in panda_link0
+string target
+float64 x
+float64 y
+---
+# Result
+bool success
+string message
+---
+# Feedback
+string stage            # approach | descend | open | retreat

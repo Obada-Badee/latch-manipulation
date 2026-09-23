@@ -1,0 +1,12 @@
+# Return to the `ready` named state defined in panda.srdf.
+#
+# Useful both as a recovery action after a failed grasp and to clear the arm
+# out of the camera's view before re-perceiving - the arm occludes the table
+# from a camera mounted above it.
+---
+# Result
+bool success
+string message
+---
+# Feedback
+string stage

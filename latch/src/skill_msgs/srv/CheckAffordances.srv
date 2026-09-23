@@ -1,0 +1,21 @@
+# Ask the robot whether it *could* act on each object, before it tries.
+#
+# This is the SayCan affordance term, p(success | skill, state) - the half of
+# that paper that is still worth having. SayCan learned it as an RL value
+# function because a 2022 system had no other way to know whether a skill would
+# work. This robot does: it owns the same IK solver and the same collision
+# scene that execution will use, so feasibility can be *computed* rather than
+# predicted. A learned value function generalises to failure modes geometry
+# cannot see (a slippery object, a bad lighting condition); a solved IK query
+# is exact about the ones it does cover. For a simulated Panda with known
+# geometry, exact beats approximate.
+#
+# Empty object_ids means "everything currently in /world_state".
+int32[] object_ids
+---
+# Parallel arrays, one entry per scored object, in the order they were scored.
+int32[]   ids
+bool[]    feasible     # false means do not attempt: pick would fail
+float64[] score        # 0..1, p(success). Hard gates give exactly 0.0
+string[]  reason       # why it scored what it did, phrased for the planner
+string[]  blocker      # '' when feasible; else width|reach|ik|ik_approach|clutter

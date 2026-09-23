@@ -1,0 +1,31 @@
+# colcon build products
+build/
+install/
+log/
+
+# python
+__pycache__/
+*.py[cod]
+
+# run artefacts: benchmark CSVs, decision logs, memory, captures.
+# These are results, not source - they belong with the paper, not the repo.
+runs/
+datasets/
+*.csv
+*.jsonl
+
+# generated scene/dataset output
+tools/synth_dataset/generated/
+
+# secrets. The key is read from the environment; it must never be in a file
+# here. A previous project in this line leaked a provider key through git
+# history and it had to be revoked.
+*.key
+.env
+.llm_keys
+
+# editors / OS
+.vscode/
+desktop.ini
+Thumbs.db
+*~

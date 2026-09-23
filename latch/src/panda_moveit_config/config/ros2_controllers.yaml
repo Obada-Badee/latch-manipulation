@@ -1,0 +1,76 @@
+# This config file is used by ros2_control
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    # gz_ros2_control turns a position command into a velocity command via
+    #     velocity = position_proportional_gain * (target - current)
+    # and its default gain is far too low for a step command. The arm hides this
+    # because JointTrajectoryController feeds closely-spaced setpoints, so the
+    # error never grows - but GripperActionController writes ONE step command,
+    # and the finger then creeps toward it.
+    #
+    # Measured with the default gain: 0.15 mm/s against a URDF limit of
+    # 200 mm/s, i.e. a 30 mm open would have taken about 200 seconds. The grasp
+    # never completed and the action never returned.
+    #
+    # Raised so the command is limited by the joint's own velocity limit rather
+    # than by the gain. If arm tracking ever looks oscillatory, this is the first
+    # value to bring back down.
+    #
+    # NOTE: this is read ONCE when the plugin initialises. `ros2 param set` on a
+    # running controller_manager reports success and changes nothing - measured
+    # 15 / 100 / 1000 at runtime all behaved identically. Always restart the sim
+    # after changing it, or you will be measuring the old value.
+    position_proportional_gain: 500.0
+
+    panda_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    panda_hand_controller:
+      type: position_controllers/GripperActionController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+
+panda_arm_controller:
+  ros__parameters:
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    joints:
+      - panda_joint1
+      - panda_joint2
+      - panda_joint3
+      - panda_joint4
+      - panda_joint5
+      - panda_joint6
+      - panda_joint7
+
+panda_hand_controller:
+  ros__parameters:
+    joint: panda_finger_joint1
+
+    # allow_stalling MUST be true for a gripper that closes on objects.
+    #
+    # Closing on a 40 mm cube stops the fingers at ~20 mm, short of the
+    # commanded position - which is exactly what a successful grasp looks like.
+    # With the default (false) the controller treats that as a failure and
+    # ABORTS, so every successful grasp would be reported as a failed one, and
+    # the grasp-verification logic in skill_server would never see a hold.
+    allow_stalling: true
+
+    # How long the fingers must be below stall_velocity_threshold before the
+    # controller calls it a stall. Long enough not to trigger on the initial
+    # acceleration, short enough that a real grasp is confirmed promptly.
+    stall_velocity_threshold: 0.001
+    stall_timeout: 0.5
+
+    # Non-zero so the fingers actually squeeze rather than stopping on first
+    # contact. The default of 0.0 means no grip force at all.
+    max_effort: 50.0
+
+    goal_tolerance: 0.005
