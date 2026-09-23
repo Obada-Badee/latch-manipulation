@@ -39,3 +39,9 @@ desktop.ini
 Thumbs.db
 *~
 *.swp
+
+# Not published: superseded artefacts, and the predecessor thesis plus the
+# supervisor notes that set this project requirements (a third party document,
+# and not needed to build, run or reproduce anything here).
+attic/
+paper/reference/
