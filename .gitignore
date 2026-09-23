@@ -45,3 +45,10 @@ Thumbs.db
 # and not needed to build, run or reproduce anything here).
 attic/
 paper/reference/
+
+# Not published: unpublished manuscripts and the research ledger. They live in
+# the working tree, not on the remote. What stays is what makes the code
+# reproducible - the scored trials under paper/data/ and the script that draws
+# figures from them.
+paper/*.md
+paper/figures/*.png

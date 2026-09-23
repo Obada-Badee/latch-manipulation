@@ -25,8 +25,11 @@ mechanism: what it buys is that the agent's account of what happened is true,
 which is the precondition for recovery, for memory, and for any evaluation that
 reads the agent rather than the world.
 
-Full analysis, including how three earlier rounds of results turned out to be
-measuring a robot that lied: **[`paper/FINDINGS.md`](paper/FINDINGS.md)**.
+The analysis behind these numbers — including how three earlier rounds of
+results turned out to be measuring a robot that lied — is written up in a
+findings ledger and two manuscripts. Those are unpublished and are kept out
+of this repository; the **data they rest on is here**, so every figure and
+every number below can be recomputed from source.
 
 ---
 
@@ -34,23 +37,21 @@ measuring a robot that lied: **[`paper/FINDINGS.md`](paper/FINDINGS.md)**.
 
 | | |
 |---|---|
-| [`latch/`](latch/) | the ROS 2 workspace — build and run from here. Self-contained: nothing in it links out to `paper/`. |
+| [`latch/`](latch/) | the ROS 2 workspace — build and run from here. Self-contained. |
 | [`latch/src/`](latch/src/) | five packages: the planner, the skill server, perception, the robot description, the MoveIt config. |
 | [`latch/tools/`](latch/tools/) | the benchmark, the dataset pipeline, and the verification scripts. Everything that measures, as opposed to runs. |
-| [`paper/`](paper/) | the findings ledger, two paper workbooks and drafts, figures, and `data/` — the 415 scored trials the results rest on. |
-| `attic/` | files nothing references any more, kept rather than deleted. |
+| [`paper/data/`](paper/data/) | the 415 scored trials the results rest on — five 75-trial conditions, 20 induced-failure trials, two 10-trial episode runs. |
+| [`paper/figures/`](paper/figures/) | the script that draws the figures from that data. |
 
 ### Where to start reading
 
-- **What was built and why** — this file, then [`paper/METHOD_affordance.md`](paper/METHOD_affordance.md)
-  for the affordance formalism (every symbol in it corresponds to code).
-- **What was measured** — [`paper/FINDINGS.md`](paper/FINDINGS.md). It is a
-  dated ledger, not a summary: every result, and every occasion the
-  instruments were wrong, in the order they happened.
-- **The papers** — [`paper/PAPER_A.md`](paper/PAPER_A.md) and
-  [`paper/PAPER_B.md`](paper/PAPER_B.md) are workbooks mapping each claim to
-  its evidence and whether that evidence is currently valid; `*_draft.md`
-  are the manuscripts.
+- **What was built** — this file, then the module docstrings. Every
+  non-obvious constant in `llm_task_planner` carries the measurement that
+  set it; `affordance.py` and `skill_server.py` are the two to read first.
+- **What was measured** — [`paper/data/`](paper/data/), through
+  `tools/validate_run.py` and `tools/failure_taxonomy.py`. The CSVs are one
+  row per trial, with the planner's own claim recorded next to the
+  simulator's verdict.
 
 ---
 
@@ -225,22 +226,23 @@ LATCH_RUNS=paper/data python3 paper/figures/make_figures.py --out paper/figures
 
 ## Things that will bite you
 
-Each of these cost hours and is written up in `paper/FINDINGS.md`:
+Each of these cost hours:
 
 - **Gazebo leaks ~1.7 GB/h.** At 8.6 hours it held 14.4 GB of 15.8 and the
   OOM killer was minutes away. Do not run more than ~5 hours of trials on one
-  `gz sim` process; restart the cell between conditions (§4.18).
+  `gz sim` process; restart the cell between conditions.
 - **`skill_server` can segfault mid-run.** It is respawned by the launch file
   now, and the benchmark probes the action servers before writing any
   non-success row — without that, one crash silently voided 26 trials and
-  scored one of them as the robot failing a task (§4.17).
+  scored one of them as the robot failing a task it never attempted.
 - **A step cap censors your data.** At 25 steps, the tool-call distribution of
-  *successful* trials maxed out at exactly 25. Size the cap from the measured
-  workload; ours is 60 (§1g).
+  *successful* trials maxed out at exactly 25 — the signature of truncation,
+  not of a workload. Size the cap from the measured distribution; ours is 60.
 - **Verification is not optional if you intend to report success rates.** Three
-  separate rounds of results were scored against skills that reported success
-  they had not achieved (§4b, §4c) — and each time, the number looked
-  perfectly reasonable.
+  separate rounds of results here were scored against skills that reported
+  success they had not achieved — and each time, the number looked perfectly
+  reasonable. `tools/test_empty_place.py` is the regression test that keeps
+  the worst of them from coming back.
 
 ---
 
