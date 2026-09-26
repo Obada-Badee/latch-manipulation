@@ -349,6 +349,107 @@ def fig_taxonomy(path: str) -> None:
     print("wrote", path)
 
 
+# --------------------------------------------------------------------------
+# F1 - the arm false positives, before and after hard negatives.
+#
+# Needs the two weight sets and one frame containing the arm. Both live in the
+# WSL workspace rather than here, so paths are arguments with sensible
+# defaults and the figure is skipped rather than failing when they are absent.
+# --------------------------------------------------------------------------
+
+#: Boxes below this are not drawn. The same threshold the live detector node
+#: publishes at, so the picture shows what the planner would actually see.
+CONF = 0.50
+
+
+def _predict(weights, image):
+    """(polygon, class_id, confidence) per detection, as numpy arrays."""
+    from ultralytics import YOLO                                 # noqa: PLC0415
+    model = YOLO(os.path.expanduser(weights))
+    imgsz = int(getattr(model, "overrides", {}).get("imgsz", 640) or 640)
+    r = model.predict(image, conf=CONF, imgsz=imgsz, verbose=False)[0]
+    if r.obb is None or len(r.obb) == 0:
+        return [], [], []
+    return (r.obb.xyxyxyxy.cpu().numpy(),
+            r.obb.cls.cpu().numpy().astype(int),
+            r.obb.conf.cpu().numpy())
+
+
+def _truth_centres(label_path, w, h):
+    out = []
+    if not os.path.exists(label_path):
+        return out
+    with open(label_path, encoding="utf-8") as fh:
+        for line in fh:
+            f = line.split()
+            if len(f) != 9:
+                continue
+            xs = [float(f[1 + 2 * i]) * w for i in range(4)]
+            ys = [float(f[2 + 2 * i]) * h for i in range(4)]
+            out.append((sum(xs) / 4.0, sum(ys) / 4.0))
+    return out
+
+
+def fig_arm_fps(path, image=None, old_w=None, new_w=None):
+    """F1: the same frame through both detectors.
+
+    Left: trained on synthetic frames only, which contain no robot arm.
+    Right: the same architecture with hard negatives added. Boxes that match
+    a ground-truth object are drawn in one colour, boxes that match nothing -
+    the false positives, all of them on the arm - in another. This is the
+    figure for the claim that the synthetic validation metric cannot see the
+    failure: both models score ~0.99 mAP on that set.
+    """
+    import matplotlib.image as mpimg                             # noqa: PLC0415
+    from matplotlib.patches import Polygon                       # noqa: PLC0415
+
+    image = image or os.path.expanduser(
+        "~/synth_obb_probe_novel/images/train/neg_00010.png")
+    old_w = old_w or os.path.expanduser(
+        "~/moveit2_obb/install/yolov8_obb/share/yolov8_obb/scripts/best_synthetic_only.pt")
+    # The hard-negative model, NOT the deployed best.pt: as of FINDINGS 2.5
+    # those are different files, and the deployed one is the "before".
+    new_w = new_w or os.path.expanduser(
+        "~/moveit2_obb/src/yolov8_obb/scripts/best_hard_negatives.pt")
+    for p in (image, old_w, new_w):
+        if not os.path.exists(p):
+            print("F1 skipped: missing", p)
+            return
+
+    img = mpimg.imread(image)
+    h, w = img.shape[:2]
+    truth = _truth_centres(
+        image.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt", w, h)
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.3))
+    for ax, weights, title in ((axes[0], old_w, "trained on synthetic frames only"),
+                               (axes[1], new_w, "+ hard negatives")):
+        ax.imshow(img)
+        polys, _, _ = _predict(weights, image)
+        fp = 0
+        for poly in polys:
+            cu, cv = poly[:, 0].mean(), poly[:, 1].mean()
+            hit = any((cu - tu) ** 2 + (cv - tv) ** 2 <= 40.0 ** 2 for tu, tv in truth)
+            if not hit:
+                fp += 1
+            ax.add_patch(Polygon(poly, closed=True, fill=False, lw=1.8,
+                                 edgecolor="#4C72B0" if hit else "#C44E52"))
+        ax.set_title("%s\n%d false positive%s on this frame"
+                     % (title, fp, "" if fp == 1 else "s"), fontsize=10)
+        ax.set_xticks([]); ax.set_yticks([])
+    # one legend for both panels
+    from matplotlib.lines import Line2D                           # noqa: PLC0415
+    fig.legend(handles=[Line2D([], [], color="#4C72B0", lw=2, label="matches a real object"),
+                        Line2D([], [], color="#C44E52", lw=2, label="matches nothing (false positive)")],
+               loc="lower center", ncol=2, frameon=False, fontsize=9)
+    fig.suptitle("Both models score ~0.99 mAP on the synthetic validation set",
+                 fontsize=11, y=0.99)
+    fig.tight_layout(rect=(0, 0.06, 1, 0.93))
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    print("wrote", path)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=os.path.dirname(os.path.abspath(__file__)))
@@ -359,6 +460,7 @@ def main() -> int:
     fig_tiers(os.path.join(args.out, "F6_success_by_tier.png"))
     fig_ablations(os.path.join(args.out, "F5_ablations.png"))
     fig_taxonomy(os.path.join(args.out, "F8_failure_taxonomy.png"))
+    fig_arm_fps(os.path.join(args.out, "F1_arm_false_positives.png"))
     return 0
 
 
