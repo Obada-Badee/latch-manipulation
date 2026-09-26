@@ -16,11 +16,29 @@ anything. That reads as a capability failure and is an infrastructure fault.
 
 from __future__ import annotations
 
+import hashlib
+import os
 import sys
 import time
 
 import rclpy
 from rclpy.node import Node
+
+
+#: md5 -> human name, for every detector build that has been run here. A
+#: checkpoint that is not in this table is not necessarily wrong, but nobody
+#: knows what it is, which is the same problem.
+KNOWN_WEIGHTS = {
+    "fffd807a8efb7d843b68c1a73679e286": "hard negatives, 640px, 80ep (0.03 FP/frame)",
+    "05ef67b3685def553fca09ea2d7f9fe2": "synthetic only, 640px, 80ep (3.14 FP/frame)",
+    "14150ccd9fa1b48b01b173badab30a10": "synthetic only, 960px, 100ep (worse on the cell)",
+}
+
+#: The build results are expected to be measured against.
+EXPECTED_WEIGHTS = "hard negatives, 640px, 80ep (0.03 FP/frame)"
+
+
+from ament_index_python.packages import get_package_share_directory  # noqa: E402
 
 
 def _gz_is_stepping():
@@ -175,6 +193,36 @@ def main() -> int:
                   f"({o.x:+.3f}, {o.y:+.3f})  yaw {o.yaw:+.2f}")
         if not world.objects:
             problems.append("/world_state reports an empty table")
+
+    # ---------------------------------------------------------------- weights
+    # WHICH detector, not just whether one is publishing. The hard-negative
+    # weights were installed on 2026-07-31, reverted by the next
+    # Windows->WSL `rsync --delete` (they existed only on the destination),
+    # and every benchmark for the next two months ran against the superseded
+    # model at 3.14 false positives per frame - 17 of them reaching the
+    # planner - while the ledger recorded the fix as deployed. Nothing in the
+    # system compared the weights on disk with the weights that were
+    # validated. See FINDINGS 2.5.
+    print("\ndetector:")
+    wpath = os.path.join(
+        get_package_share_directory("yolov8_obb"), "scripts", "best.pt")
+    if not os.path.isfile(wpath):
+        print("  MISSING", wpath)
+        problems.append(f"detector weights not found at {wpath}")
+    else:
+        digest = hashlib.md5(open(wpath, "rb").read()).hexdigest()
+        known = KNOWN_WEIGHTS.get(digest)
+        print(f"  {os.path.realpath(wpath)}")
+        print(f"  md5 {digest}  ->  {known or 'UNRECOGNISED'}")
+        if known is None:
+            problems.append(
+                f"detector weights md5 {digest} is not a known build - add it "
+                f"to KNOWN_WEIGHTS in this file once you know what it is")
+        elif known != EXPECTED_WEIGHTS:
+            problems.append(
+                f"the detector is '{known}', not '{EXPECTED_WEIGHTS}'. Results "
+                f"measured now are not comparable with runs that used the "
+                f"expected build")
 
     node.destroy_node()
     rclpy.shutdown()
