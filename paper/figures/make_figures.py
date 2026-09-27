@@ -35,6 +35,7 @@ import csv
 import glob
 import math
 import os
+import textwrap
 
 import matplotlib
 matplotlib.use("Agg")
@@ -450,6 +451,130 @@ def fig_arm_fps(path, image=None, old_w=None, new_w=None):
     print("wrote", path)
 
 
+def fig_layout_duplicate(path, probe=None, train=None):
+    """F3: two frames that are different images and the same experiment.
+
+    Left is a "held-out" probe frame; right is a training frame. Their pixels
+    differ - the image hash finds nothing, correctly, because the arm moved
+    between the two capture runs. Their object layouts are identical, because
+    both runs used capture_negatives.py's default --seed 7 and the layout
+    sequence is a pure function of the seed. Ground-truth boxes are drawn on
+    both so the reader can see the table repeat while the arm does not.
+
+    The pair is not cherry-picked: 17 of the probe's 17 frames match a
+    training frame at 100% layout overlap (FINDINGS 2.3).
+    """
+    import hashlib                                              # noqa: PLC0415
+    import matplotlib.image as mpimg                            # noqa: PLC0415
+    from matplotlib.patches import Polygon                      # noqa: PLC0415
+
+    probe = probe or os.path.expanduser(
+        "~/synth_obb_neg_probe/images/train/neg_00018.png")
+    train = train or os.path.expanduser(
+        "~/synth_obb_neg/images/train/neg_00018.png")
+    for f in (probe, train):
+        if not os.path.exists(f):
+            print("F3 skipped: missing", f)
+            return
+
+    def boxes(image_path, w, h):
+        lp = image_path.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt"
+        out = []
+        if os.path.exists(lp):
+            for line in open(lp, encoding="utf-8"):
+                f = line.split()
+                if len(f) == 9:
+                    out.append([[float(f[1 + 2 * i]) * w, float(f[2 + 2 * i]) * h]
+                                for i in range(4)])
+        return out
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.3))
+    digests = []
+    for ax, f, title in ((axes[0], probe, '"held-out" probe frame'),
+                         (axes[1], train, "training frame")):
+        img = mpimg.imread(f)
+        h, w = img.shape[:2]
+        ax.imshow(img)
+        for poly in boxes(f, w, h):
+            ax.add_patch(Polygon(poly, closed=True, fill=False, lw=1.6,
+                                 edgecolor="#4C72B0"))
+        digests.append(hashlib.md5(open(f, "rb").read()).hexdigest()[:8])
+        ax.set_title("%s\n%s" % (title, os.path.basename(f)), fontsize=10)
+        ax.set_xticks([]); ax.set_yticks([])
+    fig.suptitle("Same seed, same table, different pixels", fontsize=12, y=0.99)
+    fig.text(0.5, 0.045,
+             "image hash:  %s  vs  %s   -  no duplicate found\n"
+             "layout overlap:  100%%   -  and 17 of the probe's 17 frames match one"
+             % (digests[0], digests[1]),
+             ha="center", fontsize=9.5)
+    fig.tight_layout(rect=(0, 0.11, 1, 0.93))
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    print("wrote", path)
+
+
+def fig_episode(path, src=None):
+    """F7: one command, call by call, with what the world looked like after each.
+
+    Built from `tools/capture_episode.py`, which saves a frame per tool call
+    rather than per wall-clock interval - a frame every N seconds lands
+    mid-motion and belongs to no decision.
+
+    The episode shipped here is `m4`, "put both yellow cubes in the blue bin",
+    and it was not selected for being tidy. It contains, in order: a grasp the
+    skill layer REFUSED because the fingers closed on nothing; a successful
+    pick and place; a neighbour moved aside with place_at to clear a crowded
+    grasp; the second cube picked and placed - and a final verdict of WRONG,
+    because one of the two never landed in the bin. That last step is the
+    residual over-claim of FINDINGS 1i in a single picture: `place` verifies
+    that it held something and that it released, not where the object went.
+    """
+    import json                                                  # noqa: PLC0415
+    import matplotlib.image as mpimg                             # noqa: PLC0415
+
+    src = src or os.path.join(os.path.dirname(os.path.abspath(__file__)), "episode")
+    meta = os.path.join(src, "episode.json")
+    if not os.path.exists(meta):
+        print("F7 skipped: no episode.json in", src)
+        return
+    with open(meta, encoding="utf-8") as fh:
+        events = json.load(fh)
+    command = next((e["text"] for e in events if e.get("event") == "command"), "")
+    calls = [e for e in events if e.get("event") == "tool_call"
+             and os.path.exists(os.path.join(src, e["file"]))]
+    if not calls:
+        print("F7 skipped: no frames")
+        return
+
+    cols = 4
+    rows = (len(calls) + cols - 1) // cols
+    # 3.9 per row, not 3.05: each panel carries a two-line caption beneath it
+    # and the next row's title above, and tight_layout will not make room.
+    fig, axes = plt.subplots(rows, cols, figsize=(3.1 * cols, 3.9 * rows))
+    axes = axes.ravel() if hasattr(axes, "ravel") else [axes]
+    for ax, ev in zip(axes, calls):
+        ax.imshow(mpimg.imread(os.path.join(src, ev["file"])))
+        args = ", ".join("%s=%s" % (k, v) for k, v in ev["input"].items())
+        verdict = ev["result"].split(":", 1)[0].strip()
+        detail = ev["result"].split(":", 1)[-1].strip()
+        # Two short wrapped lines. Unwrapped, a 90-character result runs into
+        # the neighbouring panel and under the next row's title.
+        detail = textwrap.fill(detail, 34, max_lines=2, placeholder=" ...")
+        ax.set_title("%d. %s(%s)" % (ev["n"], ev["tool"], args), fontsize=8.5)
+        ax.set_xlabel("%s\n%s" % (verdict, detail), fontsize=7.2, linespacing=1.3,
+                      color="#C44E52" if ev["is_error"] else "#3b6e3b")
+        ax.set_xticks([]); ax.set_yticks([])
+    for ax in axes[len(calls):]:
+        ax.axis("off")
+    fig.suptitle('"%s"   ->   scored WRONG: 1 of 2 reached the bin'
+                 % command, fontsize=11, y=0.995)
+    fig.subplots_adjust(top=0.88, bottom=0.07, left=0.02, right=0.98,
+                        hspace=0.46, wspace=0.10)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    print("wrote", path)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=os.path.dirname(os.path.abspath(__file__)))
@@ -461,6 +586,8 @@ def main() -> int:
     fig_ablations(os.path.join(args.out, "F5_ablations.png"))
     fig_taxonomy(os.path.join(args.out, "F8_failure_taxonomy.png"))
     fig_arm_fps(os.path.join(args.out, "F1_arm_false_positives.png"))
+    fig_layout_duplicate(os.path.join(args.out, "F3_layout_duplicate.png"))
+    fig_episode(os.path.join(args.out, "F7_episode.png"))
     return 0
 
 
