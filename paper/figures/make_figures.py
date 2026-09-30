@@ -301,13 +301,24 @@ def fig_ablations(path: str) -> None:
            label="real (simulator ground truth)")
     ax.errorbar([x - w / 2 for x in xs], real, yerr=[lo, hi], fmt="none",
                 ecolor="#22303f", capsize=5, lw=1.4, zorder=3)
+    # Self-report is a binomial proportion too. Drawing it without an
+    # interval, beside a bar that has one, implies an exactness it does not
+    # have - in a figure whose whole subject is unwarranted confidence.
+    slo, shi = [], []
+    for _, rows in have:
+        k = sum(1 for r in rows if str(r.get("planner_said")) == "1")
+        p_, a, b = wilson(k, len(rows))
+        slo.append(100 * (p_ - a)); shi.append(100 * (b - p_))
     ax.bar([x + w / 2 for x in xs], said, width=w, color="#DD8452", zorder=2,
            label="self-reported (agent transcript)")
+    ax.errorbar([x + w / 2 for x in xs], said, yerr=[slo, shi], fmt="none",
+                ecolor="#22303f", capsize=5, lw=1.4, zorder=3)
     for x, r, sd in zip(xs, real, said):
         # real: inside the bar, clear of the interval cap; said: above its bar
         ax.text(x - w / 2, 4, "%.0f" % r, ha="center", va="bottom",
                 fontsize=8.5, color="white", zorder=5)
-        ax.text(x + w / 2, sd + 1.5, "%.0f" % sd, ha="center", fontsize=8.5)
+        ax.text(x + w / 2, 4, "%.0f" % sd, ha="center", va="bottom",
+                fontsize=8.5, color="white", zorder=5)
     ax.set_xticks(xs)
     ax.set_xticklabels([lbl for lbl, _ in have], fontsize=9)
     ax.set_ylabel("task success (%)")
