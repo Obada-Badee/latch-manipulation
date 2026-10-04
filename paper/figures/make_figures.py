@@ -49,9 +49,15 @@ SAFE_CLEARANCE = 0.015      # m
 CUBE = 0.040                # m, cube edge
 
 # --- measured results, from FINDINGS.md §2.1-2.2 --------------------------
-SYNTH_MAP = {"old (synthetic only)": 0.9892, "new (+ hard negatives)": 0.9945}
-LIVE_FP = {"old (synthetic only)": 3.14, "new (+ hard negatives)": 0.03}
-LIVE_RECALL = {"old (synthetic only)": 98.9, "new (+ hard negatives)": 99.6}
+# Three models, measured on the curated-pose probe (FINDINGS 2.1; the 960 px
+# row measured 2026-10-01 once its weights were recovered). The novel-pose
+# probe gives the same ordering: 3.14 / 3.83 / 0.03.
+SYNTH_MAP = {"synthetic only\n640 px": 0.9892,
+             "synthetic only\n960 px": 0.9917,
+             "+ hard negatives\n640 px": 0.9945}
+LIVE_FP = {"synthetic only\n640 px": 3.17,
+           "synthetic only\n960 px": 4.10,
+           "+ hard negatives\n640 px": 0.00}
 
 
 def fig_clutter(path: str) -> None:
@@ -122,36 +128,49 @@ def fig_clutter(path: str) -> None:
 
 
 def fig_metric_blindspot(path: str) -> None:
-    """F4 - the metric improves in a direction unrelated to the failure."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4.2))
-    labels = list(SYNTH_MAP)
-    colours = ["#9aa5b1", "#2e7d32"]
+    """F4 - the metric does not order the models by deployment quality.
 
-    bars = ax1.bar(range(2), [SYNTH_MAP[k] for k in labels], color=colours,
-                   width=0.55)
-    ax1.set_ylim(0.97, 1.0)
-    ax1.set_ylabel("mAP@50 on the synthetic validation set")
+    Left panel's y-axis starts at 0.98, deliberately, because the whole
+    spread is 0.005 and is invisible from zero. A truncated axis in a paper
+    about misleading metrics must say so on its face, so the break is drawn
+    and labelled rather than left for the reader to notice.
+    """
+    labels = list(SYNTH_MAP)
+    colours = ["#9aa5b1", "#6b7785", "#2e7d32"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.8, 4.2))
+    xs = range(len(labels))
+
+    bars = ax1.bar(xs, [SYNTH_MAP[k] for k in labels], color=colours, width=0.6)
+    ax1.set_ylim(0.980, 1.000)
+    ax1.set_ylabel("mAP@50, synthetic validation set")
     ax1.set_title("What the standard metric sees", fontsize=10)
-    ax1.set_xticks(range(2))
+    ax1.set_xticks(list(xs))
     ax1.set_xticklabels(labels, fontsize=8)
     for b, k in zip(bars, labels):
-        ax1.text(b.get_x() + b.get_width() / 2, SYNTH_MAP[k] + 0.0005,
+        ax1.text(b.get_x() + b.get_width() / 2, SYNTH_MAP[k] + 0.0004,
                  f"{SYNTH_MAP[k]:.4f}", ha="center", fontsize=9)
-    ax1.text(0.5, 0.9755, "both look solved", ha="center", fontsize=9,
-             style="italic", color="#555555", transform=ax1.transData)
+    # the axis break, drawn and named
+    kw = dict(transform=ax1.transAxes, color="k", clip_on=False, lw=1)
+    for dy in (0.0, 0.025):
+        ax1.plot((-0.03, 0.03), (0.02 + dy, 0.045 + dy), **kw)
+    ax1.text(0.04, 0.03, "axis starts at 0.980", transform=ax1.transAxes,
+             fontsize=7.5, color="#555555", va="bottom")
+    ax1.text(0.5, 0.88, "spread: 0.0053 - all three look solved",
+             transform=ax1.transAxes, ha="center", fontsize=8.5,
+             style="italic", color="#555555")
 
-    bars = ax2.bar(range(2), [LIVE_FP[k] for k in labels], color=colours,
-                   width=0.55)
-    ax2.set_ylabel("false positives per frame, live cell (arm in view)")
+    bars = ax2.bar(xs, [LIVE_FP[k] for k in labels], color=colours, width=0.6)
+    ax2.set_ylabel("false positives per frame, deployment cell")
     ax2.set_title("What the robot actually experiences", fontsize=10)
-    ax2.set_xticks(range(2))
+    ax2.set_xticks(list(xs))
     ax2.set_xticklabels(labels, fontsize=8)
+    ax2.set_ylim(0, 4.8)
     for b, k in zip(bars, labels):
-        ax2.text(b.get_x() + b.get_width() / 2, LIVE_FP[k] + 0.06,
+        ax2.text(b.get_x() + b.get_width() / 2, LIVE_FP[k] + 0.08,
                  f"{LIVE_FP[k]:.2f}", ha="center", fontsize=9)
 
-    fig.suptitle("The synthetic validation set contains no robot arm, "
-                 "so it cannot express the failure mode", fontsize=11)
+    fig.suptitle("The synthetic validation set contains no robot arm: higher mAP "
+                 "is not better on the cell", fontsize=11)
     fig.tight_layout()
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -181,6 +200,38 @@ def wilson(k: int, n: int, z: float = 1.96):
     return p, max(0.0, centre - half), min(1.0, centre + half)
 
 
+def cluster_ci(rows, field="success", reps=20000, seed=12345):
+    """Point estimate and 95% interval, resampling COMMANDS, not trials.
+
+    Same method as tools/analyse_stats.py, and what the paper says it uses.
+    75 trials are 15 commands measured five times; their outcomes cluster by
+    command, so a trial-level binomial interval understates the uncertainty
+    by roughly 60%. A figure drawn with Wilson intervals would contradict
+    the text that cites it.
+    """
+    import collections as _c
+    import random as _r
+    by = _c.defaultdict(list)
+    for r in rows:
+        by[r["task"]].append(str(r.get(field)) == "1")
+    tasks = list(by)
+    if not tasks:
+        return 0.0, 0.0, 0.0
+    point = sum(sum(v) for v in by.values()) / sum(len(v) for v in by.values())
+    rng = _r.Random(seed)
+    sims = []
+    for _ in range(reps):
+        pick = [by[rng.choice(tasks)] for _ in tasks]
+        sims.append(sum(sum(v) for v in pick) / sum(len(v) for v in pick))
+    sims.sort()
+    return point, sims[int(0.025 * reps)], sims[int(0.975 * reps)]
+
+
+#: The negative control: succeeds 5/5 in every condition, so it is excluded
+#: from per-tier figures (FINDINGS 1i / review B-5) and reported separately.
+NEG_CONTROL = "c5"
+
+
 def _load(name: str):
     """Scored rows of one run, void trials excluded."""
     path = os.path.join(RUNS_DIR, name)
@@ -205,59 +256,56 @@ def _rate(rows, pred=lambda r: True):
 
 
 def fig_tiers(path: str) -> None:
-    """F6: success by tier, pooled, with the two source runs shown separately.
+    """F6: success by tier for the full system, two replicate runs.
 
-    The two runs are drawn as well as the pool on purpose. They are the SAME
-    configuration measured twice, and the replicate spread on this suite is
-    up to 5 points overall and 24 on a single tier (FINDINGS 1l). Showing only the pooled bar would present a
-    precision the experiment does not have; showing the spread is the argument
-    for why single-run tables of a dozen trials are not evidence.
+    The two runs are `full` and `no_memory`, which are the same configuration
+    on this suite because memory cannot act within a single command
+    (FINDINGS 1k). Bars pool them; markers show each alone, because the
+    run-to-run spread is the argument for the intervals. Intervals resample
+    commands within each tier (5 commands per tier), which is honest and wide.
+
+    The negative control is excluded from the complex tier: it succeeds in
+    every condition and would add a fixed five points to the bar.
     """
-    # The two v6 runs of the full system: `full` and `no_memory`, which is the
-    # same configuration on this suite because memory cannot act within a
-    # single command (FINDINGS 1k). Both scored against an honest `place`.
-    runs = [("run 1", _load("full_v6.csv")),
-            ("run 2", _load("abl_no_memory_v6.csv"))]
+    runs = [("run 1", _load("full_v6.csv")), ("run 2", _load("abl_no_memory_v6.csv"))]
     runs = [(n, r) for n, r in runs if r]
     if not runs:
         print("F6 skipped: no benchmark CSVs found in", RUNS_DIR)
         return
-    pooled = [r for _, rows in runs for r in rows]
+    keep = lambda r: r["task"] != NEG_CONTROL
+    pooled = [r for _, rows in runs for r in rows if keep(r)]
     tiers = ("simple", "medium", "complex")
 
     fig, ax = plt.subplots(figsize=(7.0, 4.2))
-    xs = range(len(tiers))
-    ok_n = [_rate(pooled, lambda r, t=t: r["tier"] == t) for t in tiers]
-    est = [wilson(k, n) for k, n in ok_n]
-    heights = [100 * e[0] for e in est]
-    lo = [100 * (e[0] - e[1]) for e in est]
-    hi = [100 * (e[2] - e[0]) for e in est]
-
-    ax.bar(xs, heights, width=0.55, color="#4C72B0", zorder=2,
-           label="pooled (n=%d)" % len(pooled))
+    xs = list(range(len(tiers)))
+    est = []
+    for t in tiers:
+        sel = [r for r in pooled if r["tier"] == t]
+        # bootstrap over (run, command) pairs would double-count commands;
+        # resample commands, carrying both runs' trials with each
+        est.append((cluster_ci(sel, "success"), sum(r["success"] == "1" for r in sel), len(sel)))
+    heights = [100 * e[0][0] for e in est]
+    lo = [100 * (e[0][0] - e[0][1]) for e in est]
+    hi = [100 * (e[0][2] - e[0][0]) for e in est]
+    ax.bar(xs, heights, width=0.55, color="#4C72B0", zorder=2, label="both runs pooled")
     ax.errorbar(xs, heights, yerr=[lo, hi], fmt="none", ecolor="#22303f",
                 capsize=6, lw=1.6, zorder=3)
-
-    marks = ("o", "s")
-    for (label, rows), m in zip(runs, marks):
+    for (label, rows), m in zip(runs, ("o", "s")):
         pts = []
         for t in tiers:
-            k, n = _rate(rows, lambda r, t=t: r["tier"] == t)
-            pts.append(100 * k / n if n else 0)
+            sel = [r for r in rows if r["tier"] == t and keep(r)]
+            pts.append(100 * sum(r["success"] == "1" for r in sel) / len(sel) if sel else 0)
         ax.scatter(xs, pts, marker=m, s=42, zorder=4, facecolor="white",
                    edgecolor="#C44E52", lw=1.6, label="%s alone" % label)
-
-    for x, (k, n) in zip(xs, ok_n):
+    for x, (_, k, n) in zip(xs, est):
         ax.text(x, 3, "%d/%d" % (k, n), ha="center", va="bottom",
                 fontsize=9, color="white", zorder=5)
-
-    ax.set_xticks(list(xs))
-    ax.set_xticklabels([t.capitalize() for t in tiers])
+    ax.set_xticks(xs)
+    ax.set_xticklabels(["Simple", "Medium", "Complex\n(excl. negative control)"])
     ax.set_ylabel("task success (%)")
     ax.set_ylim(0, 100)
-    ax.set_title("Success by task complexity" + chr(10) +
-                 "markers: the same system measured twice",
-                 fontsize=11)
+    ax.set_title("Success by task tier, full system measured twice\n"
+                 "95% intervals resample commands within each tier", fontsize=10.5)
     ax.grid(axis="y", alpha=0.25, zorder=0)
     ax.legend(frameon=False, fontsize=9, loc="upper right")
     fig.tight_layout()
@@ -293,10 +341,9 @@ def fig_ablations(path: str) -> None:
     w = 0.36
     real, lo, hi, said = [], [], [], []
     for lbl, rows in have:
-        k, n = _rate(rows)
-        p, a, b = wilson(k, n)
+        p, a, b = cluster_ci(rows, "success")
         real.append(100 * p); lo.append(100 * (p - a)); hi.append(100 * (b - p))
-        said.append(100 * sum(1 for r in rows if str(r.get("planner_said")) == "1") / n)
+        said.append(100 * cluster_ci(rows, "planner_said")[0])
     ax.bar([x - w / 2 for x in xs], real, width=w, color="#4C72B0", zorder=2,
            label="real (simulator ground truth)")
     ax.errorbar([x - w / 2 for x in xs], real, yerr=[lo, hi], fmt="none",
@@ -306,8 +353,7 @@ def fig_ablations(path: str) -> None:
     # have - in a figure whose whole subject is unwarranted confidence.
     slo, shi = [], []
     for _, rows in have:
-        k = sum(1 for r in rows if str(r.get("planner_said")) == "1")
-        p_, a, b = wilson(k, len(rows))
+        p_, a, b = cluster_ci(rows, "planner_said")
         slo.append(100 * (p_ - a)); shi.append(100 * (b - p_))
     ax.bar([x + w / 2 for x in xs], said, width=w, color="#DD8452", zorder=2,
            label="self-reported (agent transcript)")
@@ -323,7 +369,8 @@ def fig_ablations(path: str) -> None:
     ax.set_xticklabels([lbl for lbl, _ in have], fontsize=9)
     ax.set_ylabel("task success (%)")
     ax.set_ylim(0, 100)
-    ax.set_title("What the world says vs what the agent says (n=75 per condition)",
+    ax.set_title("What the world says vs what the agent says\n"
+                 "n = 75 per condition; 95% intervals resample commands",
                  fontsize=10.5)
     ax.grid(axis="y", alpha=0.25, zorder=0)
     ax.legend(frameon=False, fontsize=9, loc="upper left")

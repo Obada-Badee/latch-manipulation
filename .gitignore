@@ -52,3 +52,7 @@ paper/reference/
 # figures from them.
 paper/*.md
 paper/figures/*.png
+# paper/figures/episode/ stays tracked: like paper/data/, it is the raw
+# capture a figure is redrawn from (F7), not manuscript text.
+# The Overleaf projects ARE the manuscripts (LaTeX source of both papers).
+paper/overleaf/
