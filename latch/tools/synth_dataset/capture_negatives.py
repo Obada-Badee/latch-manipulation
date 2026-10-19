@@ -123,6 +123,12 @@ NOVEL_RANGES: List[Tuple[float, float]] = [
 
 ARM_JOINTS = [f"panda_joint{i}" for i in range(1, 8)]
 
+#: Link origins saved with every frame (link0 frame: pose/info reports links
+#: relative to the robot model, whose origin is link0). They let a scorer rebuild
+#: the arm's silhouette from kinematics - the "just mask the arm" baseline.
+ARM_LINKS = [f"panda_link{i}" for i in range(8)] + ["panda_leftfinger",
+                                                     "panda_rightfinger"]
+
 #: Re-place the table objects every N frames.
 #:
 #: Without this every captured frame shows the same nine objects in the same
@@ -394,7 +400,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             # Poses are read AFTER the arm has settled and immediately before
             # the frame is used, so a nudged object is labelled where it now is
             # rather than where it started.
-            labels = build_labels(gz.read_poses_full(), classes)
+            poses = gz.read_poses_full()
+            labels = build_labels(poses, classes)
             if not labels:
                 empty += 1
                 reasons["nothing on the table"] = reasons.get(
@@ -442,6 +449,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "grasp_target_link0": list(l.grasp_target_link0()),
                     "top_z_link0": float(l.top_z_link0),
                 } for l in labels],
+                "arm_links_link0": {k: list(poses[k][0]) for k in ARM_LINKS
+                                    if k in poses},
             }) + "\n")
             truth.flush()
             kept += 1

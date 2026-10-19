@@ -82,6 +82,54 @@ def on_table(u: float, v: float) -> bool:
             and WORKSPACE_Y[0] <= y <= WORKSPACE_Y[1])
 
 
+#: The arm as a chain of capsules through its link origins: the silhouette a
+#: deployed robot can compute from joint states + kinematics, and nothing it
+#: cannot (no shadow, no mesh detail). link2 and link6 share origins with
+#: link1 and link5; the hand is covered by link7 -> fingertips.
+ARM_CHAIN = ["panda_link0", "panda_link1", "panda_link3", "panda_link4",
+             "panda_link5", "panda_link7", "fingers"]
+
+
+def arm_mask(links, radius: float, w: int, h: int):
+    """Binary mask of the arm, from link origins in link0 (capture-time pose)."""
+    import cv2                                                   # noqa: PLC0415
+    pts = {k: np.asarray(v, float) for k, v in links.items()}
+    if "panda_leftfinger" in pts and "panda_rightfinger" in pts:
+        pts["fingers"] = (pts["panda_leftfinger"] + pts["panda_rightfinger"]) / 2
+    chain = [pts[k] for k in ARM_CHAIN if k in pts]
+    mask = np.zeros((h, w), np.uint8)
+    # Swept spheres, sampled every 1 cm, each with its OWN projected radius.
+    # One thick line per segment (the first version) used the segment's
+    # largest radius: an elbow 5 cm below the lens and 60 cm to the side
+    # projects off-image with a ~400 px radius, and the band swept back over
+    # half the table. Samples that close to the lens plane, or whose disc
+    # cannot reach the image, are skipped: they are outside the field of view.
+    for a, b in zip(chain, chain[1:]):
+        n = max(2, int(np.linalg.norm(b - a) / 0.01) + 1)
+        for t in np.linspace(0.0, 1.0, n):
+            p = a + (b - a) * t
+            d = CAMERA.origin[2] - p[2]
+            if d < 0.05:
+                continue
+            u, v = CAMERA.link0_to_pixel(*p)
+            r = radius * CAMERA.fy / d        # lateral size at depth d (downward camera)
+            if u + r < 0 or u - r >= w or v + r < 0 or v - r >= h:
+                continue
+            cv2.circle(mask, (int(round(u)), int(round(v))), max(1, int(round(r))), 255, -1)
+    return mask
+
+
+def _check_arm_mask() -> None:
+    """A link origin over the table is masked; a pixel far from the arm is not."""
+    links = {"panda_link0": [0.0, 0.0, 0.0], "panda_link1": [0.0, 0.0, 0.333],
+             "panda_link3": [0.30, 0.30, 0.40]}
+    m = arm_mask(links, 0.06, 640, 480)
+    u, v = (int(round(c)) for c in CAMERA.link0_to_pixel(0.30, 0.30, 0.40))
+    assert m[v, u], "link origin not covered by its own mask"
+    fu, fv = (int(round(c)) for c in CAMERA.link0_to_pixel(0.55, 0.75, 0.0))
+    assert not m[fv, fu], "mask leaked to a far corner of the table"
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__,
@@ -92,7 +140,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--conf", type=float, default=0.50)
     ap.add_argument("--imgsz", type=int, default=0,
                     help="0 reads it from the checkpoint")
+    ap.add_argument("--mask-arm", type=float, default=0.0, metavar="RADIUS_M",
+                    help="baseline: drop predictions whose centre lies on the "
+                         "arm silhouette rebuilt from the link poses recorded "
+                         "at capture (needs a capture with arm_links_link0)")
     args = ap.parse_args(argv)
+
+    links_by_image = {}
+    if args.mask_arm > 0:
+        _check_arm_mask()
+        import json                                              # noqa: PLC0415
+        gt = os.path.join(os.path.expanduser(args.dataset), "ground_truth.jsonl")
+        for line in open(gt, encoding="utf-8"):
+            rec = json.loads(line)
+            if "arm_links_link0" in rec:
+                links_by_image[os.path.basename(rec["image"])] = rec["arm_links_link0"]
+        if not links_by_image:
+            print("--mask-arm: this capture recorded no arm link poses", file=sys.stderr)
+            return 1
+    masked_total = 0
 
     images = sorted(glob.glob(os.path.join(
         os.path.expanduser(args.dataset), "images", args.split, "*.png")))
@@ -126,6 +192,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                      for p, c in zip(xy, cls)]
 
         h, w = result.orig_shape
+        if args.mask_arm > 0:
+            m = arm_mask(links_by_image[os.path.basename(path)], args.mask_arm, w, h)
+            kept = [p for p in preds
+                    if not (0 <= int(p[1]) < h and 0 <= int(p[0]) < w and m[int(p[1]), int(p[0])])]
+            masked_total += len(preds) - len(kept)
+            preds = kept
         truth = centres(label, w, h)
         frames += 1
         truth_total += len(truth)
@@ -166,6 +238,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"weights   {args.weights}")
     print(f"frames    {frames} ({args.split} split of {args.dataset})")
     print(f"imgsz     {imgsz}   conf {args.conf}")
+    if args.mask_arm > 0:
+        print(f"arm mask  radius {args.mask_arm} m: {masked_total} predictions dropped")
     print()
     print(f"true objects        {truth_total}")
     print(f"  detected          {matched_total}  "
