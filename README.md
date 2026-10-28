@@ -251,3 +251,13 @@ Each of these cost hours:
 The system is complete and measured; the papers are in draft. Simulation only,
 by constraint — no physical arm was available, and no hardware claim is made.
 Transfer to a real Panda is the stated next step rather than a conceded gap.
+
+---
+
+## Licence
+
+Apache-2.0 ([`LICENSE`](LICENSE)), except the perception package
+`latch/src/yolov8_obb/` and its detector weights, which are AGPL-3.0 because
+they run on and were trained with Ultralytics YOLOv8. The Panda model and the
+MoveIt configuration come from MoveIt's `moveit_resources` and Franka's
+`franka_ros`. [`NOTICE`](NOTICE) lists what came from where.
