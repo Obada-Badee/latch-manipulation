@@ -40,7 +40,6 @@ install(
 install(
   PROGRAMS
   scripts/yolov8_obb_publisher.py
-  scripts/yolov8_obb_subscriber.py
   scripts/world_model.py
   scripts/debug_viewer.py
   launch/yolov8_obb.launch.py
