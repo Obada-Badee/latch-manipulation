@@ -314,7 +314,7 @@ def fig_tiers(path: str) -> None:
     print("wrote", path)
 
 
-def fig_ablations(path: str) -> None:
+def fig_ablations(path: str, conditions=None, title=None) -> None:
     """F5: real success against self-reported success, per condition.
 
     This is the paper's central figure. Each condition gets two bars: what
@@ -323,7 +323,7 @@ def fig_ablations(path: str) -> None:
     real success as the full system and reports nineteen points more
     (FINDINGS 1o). A transcript-scored evaluation would rank it first.
     """
-    conditions = [
+    conditions = conditions or [
         ("LATCH",              "full_v6.csv"),
         ("no affordance",      "abl_no_affordance_v6.csv"),
         ("no memory",          "abl_no_memory_v6.csv"),
@@ -368,8 +368,10 @@ def fig_ablations(path: str) -> None:
     ax.set_xticks(xs)
     ax.set_xticklabels([lbl for lbl, _ in have], fontsize=9)
     ax.set_ylabel("task success (%)")
-    ax.set_ylim(0, 100)
-    ax.set_title("What the world says vs what the agent says\n"
+    # Six or more arms put a tall interval under the legend; give it headroom.
+    ax.set_ylim(0, 100 if len(have) <= 5 else 122)
+    ax.set_yticks(range(0, 101, 20))
+    ax.set_title(title or "What the world says vs what the agent says\n"
                  "n = 75 per condition; 95% intervals resample commands",
                  fontsize=10.5)
     ax.grid(axis="y", alpha=0.25, zorder=0)
@@ -633,6 +635,25 @@ def fig_episode(path, src=None):
     print("wrote", path)
 
 
+def _honesty_pairs():
+    """F10: naive vs LATCH, matched for detector and model.
+
+    The 19-point gap of F5 was measured on the superseded detector; F10 puts
+    it beside the same comparison on the corrected detector, and on any
+    second model, so the reader sees whether it replicates. Missing files are
+    skipped by fig_ablations.
+    """
+    pairs = [("LATCH\nold detector", "full_v6.csv"),
+             ("naive\nold detector", "naive_v6.csv"),
+             ("LATCH\nnew detector", "full_v7.csv"),
+             ("naive\nnew detector", "naive_v7.csv")]
+    for path in sorted(glob.glob(os.path.join(RUNS_DIR, "full_v7_*.csv"))):
+        tag = os.path.basename(path)[len("full_v7_"):-len(".csv")]
+        pairs += [("LATCH\n" + tag, "full_v7_%s.csv" % tag),
+                  ("naive\n" + tag, "naive_v7_%s.csv" % tag)]
+    return pairs
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=os.path.dirname(os.path.abspath(__file__)))
@@ -642,6 +663,10 @@ def main() -> int:
     fig_metric_blindspot(os.path.join(args.out, "F4_metric_blindspot.png"))
     fig_tiers(os.path.join(args.out, "F6_success_by_tier.png"))
     fig_ablations(os.path.join(args.out, "F5_ablations.png"))
+    fig_ablations(os.path.join(args.out, "F10_honesty_gap.png"),
+                  conditions=_honesty_pairs(),
+                  title="The honesty gap, on matched arms\n"
+                        "n = 75 per bar pair; 95% intervals resample commands")
     fig_taxonomy(os.path.join(args.out, "F8_failure_taxonomy.png"))
     fig_arm_fps(os.path.join(args.out, "F1_arm_false_positives.png"))
     fig_layout_duplicate(os.path.join(args.out, "F3_layout_duplicate.png"))

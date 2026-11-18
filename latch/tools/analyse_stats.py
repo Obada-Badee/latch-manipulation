@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import collections
 import csv
+import glob
 import io
+import itertools
 import os
 import random
 import re
@@ -84,20 +86,62 @@ def cluster_bootstrap(rows, reps=20000, seed=12345):
     return point, out[int(0.025 * reps)], out[int(0.975 * reps)]
 
 
-def mcnemar(a_rows, b_rows):
-    """Exact paired test on matched (task, trial) cells. Returns (b, c, p)."""
-    A = {(r["task"], r["trial"]): r["success"] == "1" for r in a_rows}
-    B = {(r["task"], r["trial"]): r["success"] == "1" for r in b_rows}
+OK = lambda r: r["success"] == "1"                              # noqa: E731
+SAID = lambda r: str(r.get("planner_said")) == "1"              # noqa: E731
+OVER = lambda r: SAID(r) and r["success"] != "1"                # noqa: E731
+
+
+def binom_two_sided(b, c):
+    """Exact two-sided binomial p for b vs c discordant pairs, p = 0.5."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    from math import comb
+    tail = sum(comb(n, i) for i in range(0, min(b, c) + 1)) / (2.0 ** n)
+    return min(1.0, 2.0 * tail)
+
+
+def mcnemar(a_rows, b_rows, pred=OK, key=("task", "trial")):
+    """Exact paired test on matched cells. Returns (b, c, p)."""
+    A = {tuple(r[f] for f in key): pred(r) for r in a_rows}
+    B = {tuple(r[f] for f in key): pred(r) for r in b_rows}
     both = set(A) & set(B)
     b = sum(1 for k in both if A[k] and not B[k])
     c = sum(1 for k in both if B[k] and not A[k])
-    n = b + c
-    if n == 0:
-        return b, c, 1.0
-    # exact binomial two-sided, p = 0.5
-    from math import comb
-    tail = sum(comb(n, i) for i in range(0, min(b, c) + 1)) / (2.0 ** n)
-    return b, c, min(1.0, 2.0 * tail)
+    return b, c, binom_two_sided(b, c)
+
+
+def paired_diff(a_rows, b_rows, pred, reps=20000, seed=12345):
+    """a - b in percentage points on matched (task, trial) cells.
+
+    Returns (point, lo, hi, p, n_cells): a 95% interval resampling COMMANDS,
+    and an exact two-sided sign-flip p over the per-command differences -
+    the command, not the trial, being the unit of analysis (see top).
+    """
+    A = {(r["task"], r["trial"]): pred(r) for r in a_rows}
+    B = {(r["task"], r["trial"]): pred(r) for r in b_rows}
+    cells = sorted(set(A) & set(B))
+    if not cells:
+        return 0.0, 0.0, 0.0, 1.0, 0
+    per = collections.defaultdict(lambda: [0, 0])     # task -> [diff, cells]
+    for k in cells:
+        per[k[0]][0] += int(A[k]) - int(B[k])
+        per[k[0]][1] += 1
+    tasks = sorted(per)
+    d = [per[t][0] for t in tasks]
+    obs = abs(sum(d))
+    hits = total = 0
+    for signs in itertools.product((1, -1), repeat=len(d)):
+        total += 1
+        hits += abs(sum(sg * x for sg, x in zip(signs, d))) >= obs
+    rng = random.Random(seed)
+    sims = []
+    for _ in range(reps):
+        pick = [per[rng.choice(tasks)] for _ in tasks]
+        sims.append(100.0 * sum(q[0] for q in pick) / sum(q[1] for q in pick))
+    sims.sort()
+    return (100.0 * sum(d) / len(cells), sims[int(0.025 * reps)],
+            sims[int(0.975 * reps)], hits / total, len(cells))
 
 
 def fisher(a, b, c, d):
@@ -209,7 +253,102 @@ def main():
               % (lbl, got, req, 100 * rate, 100 * rate ** 5, k, len(task)))
     print("\n  n=50 placements per condition against n=10 task outcomes: the")
     print("  compounding constant is measured here, not assumed.")
+
+    honesty_gap()
+    recovery()
     return 0
+
+
+def _k(rows, pred):
+    return "%2d/%d" % (sum(1 for r in rows if pred(r)), len(rows))
+
+
+def honesty_gap():
+    """naive minus LATCH, on arms matched for detector and model.
+
+    The registered analysis (paper/FOLLOWUP_PLAN_2026-11.md, Phase E):
+    primary = self-reported success, command-level sign-flip p;
+    secondary = over-claims, real success, and the trial-level tests the
+    earlier drafts quoted, for comparison only.
+    """
+    pairs = [("v6 superseded detector, gpt-oss-120b", "full_v6.csv", "naive_v6.csv"),
+             ("v7 corrected detector, gpt-oss-120b", "full_v7.csv", "naive_v7.csv")]
+    for path in sorted(glob.glob(os.path.join(DATA, "full_v7_*.csv"))):
+        tag = os.path.basename(path)[len("full_v7_"):-len(".csv")]
+        pairs.append(("v7 corrected detector, model tag " + tag,
+                      "full_v7_%s.csv" % tag, "naive_v7_%s.csv" % tag))
+
+    print("\n" + "=" * 78)
+    print("HONESTY GAP on matched arms (naive - LATCH)")
+    print("=" * 78)
+    for label, f_full, f_naive in pairs:
+        full, naive = load(f_full), load(f_naive)
+        if not full or not naive:
+            continue
+        model = sorted({r.get("model") for r in full + naive if r.get("model")})
+        print("\n  %s%s" % (label, ("  [" + ", ".join(model) + "]") if model else ""))
+        _, _, p = mcnemar(naive, full, OK)
+        print("    real success   naive %s   LATCH %s   McNemar p = %.3f"
+              % (_k(naive, OK), _k(full, OK), p))
+        for name, pred in (("self-report", SAID), ("over-claims", OVER)):
+            d, lo, hi, p_cmd, _ = paired_diff(naive, full, pred)
+            _, _, p_mc = mcnemar(naive, full, pred)
+            ka = sum(1 for r in naive if pred(r))
+            kb = sum(1 for r in full if pred(r))
+            p_f = fisher(ka, len(naive) - ka, kb, len(full) - kb)
+            print("    %-14s naive %s   LATCH %s   diff %+5.1f [%+5.1f, %+5.1f]"
+                  "   command-level p = %.3f | McNemar %.3f | Fisher %.3f"
+                  % (name, _k(naive, pred), _k(full, pred), d, lo, hi,
+                     p_cmd, p_mc, p_f))
+
+    v6, v7 = load("full_v6.csv"), load("full_v7.csv")
+    if v6 and v7:
+        d, lo, hi, p_cmd, _ = paired_diff(v7, v6, SAID)
+        _, _, p_mc = mcnemar(v7, v6, SAID)
+        print("\n  REPLICATE: full_v7 vs full_v6 self-report   %s vs %s   diff %+5.1f"
+              " [%+5.1f, %+5.1f]   command-level p = %.3f | McNemar %.3f"
+              % (_k(v7, SAID), _k(v6, SAID), d, lo, hi, p_cmd, p_mc))
+        print("  (the same system, two runs: the scale of run-to-run movement)")
+
+
+def recovery_rows(arm):
+    out = []
+    pattern = os.path.join(DATA, "recovery_v7_%s_s*.csv" % arm)
+    for path in sorted(glob.glob(pattern)):
+        out += load(os.path.basename(path))
+    return out
+
+
+def recovery():
+    """Induced failure against a control interleaved in the same session.
+
+    Cells pair on (seed, task): both arms see the identical scene for a seed.
+    Only trials where the injector actually fired measure recovery; the
+    silent ones are reported separately because they are not a random subset.
+    """
+    induced, control = recovery_rows("induced"), recovery_rows("control")
+    if not induced or not control:
+        return
+    print("\n" + "=" * 78)
+    print("RECOVERY, induced vs matched control in the same session")
+    print("=" * 78)
+    fired = [r for r in induced if r.get("induced") == "1"]
+    silent = [r for r in induced if r.get("induced") != "1"]
+    ctl = {(r["seed"], r["task"]): r for r in control}
+    fired_m = [r for r in fired if (r["seed"], r["task"]) in ctl]
+    matched = [ctl[(r["seed"], r["task"])] for r in fired_m]
+    _, _, p = mcnemar(fired_m, matched, OK, key=("seed", "task"))
+    kf = sum(1 for r in fired_m if OK(r))
+    kc = sum(1 for r in matched if OK(r))
+    n = len(fired_m)
+    print("  injector fired      %s succeeded" % _k(fired, OK))
+    print("  matched control     %s succeeded (same seed and task)" % _k(matched, OK))
+    if n:
+        print("  difference          %+.1f points on %d pairs   McNemar p = %.3f"
+              % (100.0 * (kf - kc) / n, n, p))
+    print("  injector silent     %s succeeded (not a random subset)" % _k(silent, OK))
+    print("  all control trials  %s succeeded (session health: expect ~24-26/30)"
+          % _k(control, OK))
 
 
 if __name__ == "__main__":
