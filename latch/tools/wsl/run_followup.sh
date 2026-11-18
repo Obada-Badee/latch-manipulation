@@ -111,8 +111,10 @@ rows = list(csv.DictReader(open(sys.argv[1], encoding="utf-8")))
 if not rows:
     print("GATE FAIL: no rows written"); sys.exit(0)
 print("columns end with:", list(rows[0])[-2:])
+# c5 is the negative control: the right answer is to refuse without a tool call.
 bad = [r["task"] for r in rows
-       if r["outcome"] in ("error", "void") or not int(r["tool_calls"] or 0)]
+       if r["outcome"] in ("error", "void")
+       or (r["task"] != "c5" and not int(r["tool_calls"] or 0))]
 for r in rows:
     print(r["task"], r["outcome"], "tool_calls=" + str(r["tool_calls"]),
           r.get("backend"), r.get("model"))
