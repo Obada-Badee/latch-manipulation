@@ -419,6 +419,7 @@ FIELDS = [
     "induced",              # did the failure injector actually fire this trial?
     "induced_detail",       # what it did, or why it did not fire
     "void_reason",
+    "backend", "model",     # the serving stack that produced the row
 ]
 
 
@@ -766,6 +767,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     planner = PlannerHarness(backend=args.backend, model=args.model,
                              no_affordance=args.no_affordance,
                              no_memory=args.no_memory)
+    # e.g. "deepinfra:openai/gpt-oss-120b" - the planner's own description, so
+    # the row records what served the run, not what was asked for.
+    served_backend, _, served_model = (
+        planner.node._backend.describe().partition(":"))
 
     # Built AFTER the planner, deliberately. Both this and PlannerHarness call
     # rclpy.init(); the harness calls it unconditionally, while the injector
@@ -800,6 +805,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             rows.append(row)
         print(f"resuming: {len(done_cells)} trials already recorded in "
               f"{out_path}")
+
+    # Rows written under a header with a different column set would be read
+    # back misaligned, silently. Refuse rather than append.
+    if args.resume and os.path.exists(out_path):
+        with open(out_path, newline="", encoding="utf-8") as fh:
+            header = next(csv.reader(fh), [])
+        if header != FIELDS:
+            print(f"{out_path} has a different column set; appending would "
+                  f"misalign it. Use a new --out file.", file=sys.stderr)
+            planner.shutdown()
+            return 2
 
     mode = "a" if (args.resume and os.path.exists(out_path)) else "w"
     spent = 0
@@ -880,6 +896,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                             time.sleep(TPM_BACKOFF_S)
                             continue
                         break
+
+                    row.update(backend=served_backend, model=served_model)
 
                     # Before this row is written: if the trial did not succeed,
                     # rule out the robot having gone away. skill_server
