@@ -1,0 +1,23 @@
+order,arxiv,short_title,I1_sim_trained_detector_or_pose,I2_manipulation_application,I3_metric_on_synthetic_data,included,a_seed_values_reported,b_eval_scenes_disjoint_stated,c_generator_released,note
+1,2506.07539,Domain randomization for object detection in manufacturing,y,weak,n,n,,,,all tabled mAP on real images
+2,2208.04171,Object detection using sim2real DR for robotic applications (IEEE T-RO 2023),y,y,y,y,partly,unclear,y,seed effect studied in an ablation; values in an image table; validation from the same distribution
+3,1812.00491,Adversarial domain randomization,y,n,n,n,,,,classification and car detection
+4,1804.06516,Training deep networks with synthetic data,y,n,n,n,,,,KITTI cars
+5,1703.06907,Domain randomization (Tobin et al.),y,y,n,n,,,,test set is real images
+6,1809.10790,DOPE,y,y,n,n,,,,test on real YCB-Video frames
+7,2205.14099,BURG-Toolkit,n,y,,n,,,,no detector trained
+8,2301.12249,Precise model-free grasping with sim-to-real transfer,n,y,n,n,,,,grasp-affordance network
+9,2411.06166,Efficient synthetic image data pipeline,n,weak,n,n,,,,no experiments
+10,2211.01048,Sim2Real grasp pose estimation for adaptive robotic applications,y,y,y,y,n,n,unclear,validation generated from the same distribution as training
+11,2106.16118,SimNet,y,y,n,n,,,,all metrics on real images
+12,2407.12449,Physically-based structured-light synthetic data,y,y,y,y,n,n,n,synthetic test set not described
+13,1712.03303,Sim-to-real accurate grasping eye-in-hand,n,y,y,n,,,,segmentation and control policy
+14,1909.02075,Sim-to-real directional semantic grasping,n,y,y,n,,,,grasping policy
+15,2309.14265,Industrial 6D pose estimation automotive logistics,y,y,n,n,,,,all metrics real
+16,2007.13866,se(3)-TrackNet,y,y,n,n,,,,real datasets
+17,2203.00945,ParaPose,y,weak,y,y,n,unclear,n,borderline I2; nine previously unseen synthetic images
+18,1806.06888,Object localization and 6D pose from simulation,y,y,n,n,,,,real datasets
+19,2509.07978,One View Many Worlds,y,y,n,n,,,,real datasets and robot trials
+20,2208.14288,6IMPOSE,y,y,n,n,,,,LineMOD and robot trials
+21,1911.09231,Camera-to-robot pose estimation (DREAM),y,borderline,y,y,n,unclear,unclear,borderline I2; DR datasets used for training and testing
+22,2103.08105,MBAPose,y,n,y,n,,,,surgical instruments
