@@ -109,6 +109,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--probe", required=True, help="the set you want to score on")
     ap.add_argument("--train", required=True, help="what the model was trained on")
+    ap.add_argument("--threshold", type=float, default=NEAR_DUPLICATE_FRAC,
+                    help="layout-overlap fraction at or above which a probe "
+                         "frame counts as a near-duplicate (default %(default)s)")
     args = ap.parse_args(argv)
 
     probe_root = os.path.expanduser(args.probe)
@@ -142,14 +145,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             frac = overlap_fraction(pc, tc)
             if frac > best:
                 best, best_name = frac, tname
-        if best >= NEAR_DUPLICATE_FRAC:
+        if best >= args.threshold:
             duplicated.append((pname, best_name, best))
         if best > worst_frac:
             worst_frac, worst_pair = best, (pname, best_name)
 
     print(f"  worst-case layout overlap: {worst_frac * 100:.1f}%  "
           f"({worst_pair[0]} vs {worst_pair[1]})")
-    print(f"  frames at or above {NEAR_DUPLICATE_FRAC * 100:.0f}%: "
+    print(f"  frames at or above {args.threshold * 100:.0f}%: "
           f"{len(duplicated)} of {len(p_lay)}")
     for pname, tname, frac in duplicated[:5]:
         print(f"    {pname} ~ {tname}  ({frac * 100:.0f}%)")
