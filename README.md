@@ -6,24 +6,34 @@ and collision checker rather than scored by a learned model, grasps are
 verified from joint states before they are claimed, and task success is read
 from the simulator — never from the planner's own report.
 
-The headline result is what that last distinction costs:
+The headline result is what that last distinction exposes: every
+configuration claims more than it does.
 
-| condition | real success | self-reported | agreement |
-|---|---|---|---|
-| **LATCH** | **61.3%** (n=75) | 65% | 69% |
-| no affordances | 53.3% | 79% | 59% |
-| no memory | 61.3% | 69% | 68% |
-| no affordances + no memory | 58.7% | 77% | 63% |
-| **naive: the same, with unverified skills** | **61.3%** | **84%** | 61% |
+| condition | detector | real success | self-reported | agreement |
+|---|---|---|---|---|
+| **LATCH** | corrected | **61.3%** (n=75) | 77% | 68% |
+| **naive: the same, with unverified skills** | corrected | **62.7%** | 79% | 65% |
+| LATCH | superseded | 61.3% | 65% | 69% |
+| no affordances | superseded | 53.3% | 79% | 59% |
+| no memory | superseded | 61.3% | 69% | 68% |
+| no affordances + no memory | superseded | 58.7% | 77% | 63% |
+| naive | superseded | 61.3% | 84% | 61% |
 
-The naive agent — skills that report success when their motion completes, which
-is how most language-model manipulation systems are built — achieves **exactly
-the same real success** as the full system and **claims nineteen points more**.
-Scored from its transcript it wins; scored from the world it is the same robot.
-Skill verification turns out to be a *truthfulness* mechanism, not a success
-mechanism: what it buys is that the agent's account of what happened is true,
-which is the precondition for recovery, for memory, and for any evaluation that
-reads the agent rather than the world.
+Real success sits near 61% whatever is switched off; what the agent reports
+runs 4 to 25 points above it. The naive agent has skills that report success
+whenever their motion completes, which is how most language-model
+manipulation systems are built. On the superseded detector it claimed far
+more than the verified system at the same real success. Re-run on the
+corrected detector, the difference is **1.3 points (95% interval −2.7 to
++5.3, resampling commands; command-level p = 1.0)**. Skill verification did
+not measurably change what this agent reports, and did not change what it
+achieves.
+
+The first comparison was one run per arm, significant at the trial level
+(Fisher p = 0.014). It did not survive its replication, while the full
+system's own self-report moved 12 points between two runs. Self-reported
+success here is a noisy, run-level quantity - which is the case for scoring
+from the world, and for testing at the level of commands rather than trials.
 
 The analysis behind these numbers — including how three earlier rounds of
 results turned out to be measuring a robot that lied — is written up in a
@@ -40,7 +50,7 @@ every number below can be recomputed from source.
 | [`latch/`](latch/) | the ROS 2 workspace — build and run from here. Self-contained. |
 | [`latch/src/`](latch/src/) | five packages: the planner, the skill server, perception, the robot description, the MoveIt config. |
 | [`latch/tools/`](latch/tools/) | the benchmark, the dataset pipeline, and the verification scripts. Everything that measures, as opposed to runs. |
-| [`paper/data/`](paper/data/) | the 415 scored trials the results rest on — five 75-trial conditions, 20 induced-failure trials, two 10-trial episode runs. |
+| [`paper/data/`](paper/data/) | the 565 scored trials the results rest on — seven 75-trial runs (five conditions on the superseded detector, LATCH and naive on the corrected one), 20 induced-failure trials, two 10-trial episode runs. |
 | [`paper/figures/`](paper/figures/) | the script that draws the figures from that data. |
 
 ### Where to start reading
@@ -73,9 +83,10 @@ first column.
 
 An LLM provider key is required for the planner. The system was measured on
 **DeepInfra** serving `openai/gpt-oss-120b`; a Groq backend for the same model
-is included. The host is recorded in every result row, deliberately — the same
-weights served at a different quantisation are not guaranteed to make the same
-tool calls.
+is included. The host is recorded in every decision-log record and, for runs
+from November 2026 on, in the `backend` and `model` columns of every result
+row, deliberately — the same weights served at a different quantisation are not
+guaranteed to make the same tool calls.
 
 ---
 
@@ -209,14 +220,14 @@ against a verified one:
 ```bash
 ros2 launch panda_moveit_config moveit_gazebo_obb.py ... verify:=false
 python3 tools/benchmark.py --no-verify --no-affordance --no-memory \
-        --condition naive --out runs/naive_v6.csv
+        --condition naive --out runs/naive_v7.csv
 ```
 
 ### The data
 
-[`paper/data/`](paper/data/) holds all 415 scored trials behind the results —
-the five 75-trial conditions, 20 induced-failure trials, and the two
-10-trial episode runs. Figures regenerate from them directly:
+[`paper/data/`](paper/data/) holds all 565 scored trials behind the results —
+the seven 75-trial runs, 20 induced-failure trials, and the two 10-trial
+episode runs. Figures regenerate from them directly:
 
 ```bash
 LATCH_RUNS=paper/data python3 paper/figures/make_figures.py --out paper/figures
