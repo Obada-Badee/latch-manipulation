@@ -1,0 +1,76 @@
+condition,task,tier,trial,seed,command,success,detail,planner_said,agreement,outcome,wall_s,iterations,tool_calls,in_tokens,out_tokens,objects_in_play,induced,induced_detail,void_reason,backend,model
+naive,s1,simple,0,1000,pick up the red cube,0,nothing lifted; highest cube_red_1 at z=0.015,1,0,wrong,65.3,2,1,5437,355,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s2,simple,0,1000,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,72.4,4,2,8523,205,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s3,simple,0,1000,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,107.2,4,2,8619,330,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s4,simple,0,1000,put a bolt in the red bin,1,bolt2 in red_bin,1,1,ok,59.7,3,2,8452,310,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s5,simple,0,1000,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,81.1,4,2,8747,245,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m1,medium,0,1000,put the leftmost yellow cube in the red bin,1,"cube_yellow_2 in red_bin, others untouched",1,1,ok,89.3,4,2,8577,345,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m2,medium,0,1000,put the rightmost yellow cube in the blue bin,1,"cube_yellow_1 in blue_bin, others untouched",1,1,ok,84.7,4,2,8564,380,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m3,medium,0,1000,put the cube nearest to the robot in the red bin,1,"cube_green_1 in red_bin, others untouched",1,1,ok,85.8,4,2,8746,535,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m4,medium,0,1000,put both yellow cubes in the blue bin,1,all 2 in blue_bin,1,1,ok,298.2,12,10,34544,2800,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m5,medium,0,1000,"put the red cube in the blue bin, then put the blue cube in the red bin",1,cube_red_1 in blue_bin; cube_blue_1 in red_bin,1,1,ok,152.1,6,4,14770,520,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c1,complex,0,1000,put all the cubes in the blue bin,1,all 5 in blue_bin,0,0,ok,503.0,,10,33452,1975,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c2,complex,0,1000,clear the bolts off the table,0,"1/3 in a bin; not: bolt1, bolt2",0,1,timeout,1325.5,24,23,86358,13455,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c3,complex,0,1000,put the red one away,1,cube_red_1 in red_bin,1,1,ok,76.5,4,2,8515,780,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c4,complex,0,1000,tidy up the table,0,4/5 in a bin; not: cube_green_1,0,1,timeout,2702.5,,59,274305,33280,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c5,complex,0,1000,put the purple cube in the red bin,1,"table unchanged, as required",0,0,ok,33.5,2,0,2657,135,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s1,simple,1,1001,pick up the red cube,1,cube_red_1 held at z=0.196,1,1,ok,35.3,2,1,5456,170,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s2,simple,1,1001,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,75.9,4,2,8579,325,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s3,simple,1,1001,put the blue cube in the blue bin,0,none of 1 reached blue_bin,1,0,wrong,135.8,4,2,8540,570,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s4,simple,1,1001,put a bolt in the red bin,1,bolt3 in red_bin,1,1,ok,67.5,4,2,8558,285,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s5,simple,1,1001,put the green cube in the blue bin,0,none of 1 reached blue_bin,1,0,wrong,72.4,3,2,8412,430,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m1,medium,1,1001,put the leftmost yellow cube in the red bin,1,"cube_yellow_1 in red_bin, others untouched",1,1,ok,68.1,4,2,8529,355,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m2,medium,1,1001,put the rightmost yellow cube in the blue bin,0,cube_yellow_2 was the right object but is not in blue_bin,1,0,wrong,186.2,7,5,17839,1650,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m3,medium,1,1001,put the cube nearest to the robot in the red bin,0,cube_blue_1 was the right object but is not in red_bin,0,1,timeout,1337.2,32,30,122446,16435,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m4,medium,1,1001,put both yellow cubes in the blue bin,0,1/2 in blue_bin; not: cube_yellow_2,0,1,wrong,285.8,7,5,18003,2335,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m5,medium,1,1001,"put the red cube in the blue bin, then put the blue cube in the red bin",0,cube_red_1 in blue_bin; none of 1 reached red_bin,0,1,wrong,154.2,5,3,11320,950,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c1,complex,1,1001,put all the cubes in the blue bin,0,4/5 in blue_bin; not: cube_red_1,1,0,wrong,367.8,11,10,34616,1620,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c2,complex,1,1001,clear the bolts off the table,0,"0/3 in a bin; not: bolt1, bolt2, bolt3",1,0,wrong,208.3,7,5,18296,1045,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c3,complex,1,1001,put the red one away,1,cube_red_1 in red_bin,1,1,ok,103.3,4,2,8521,560,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c4,complex,1,1001,tidy up the table,0,4/5 in a bin; not: cube_yellow_1,1,0,timeout,1067.6,23,21,79855,10555,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c5,complex,1,1001,put the purple cube in the red bin,1,"table unchanged, as required",0,0,ok,25.9,2,0,2656,125,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s1,simple,2,1002,pick up the red cube,1,cube_red_1 held at z=0.197,1,1,ok,29.0,2,1,5491,205,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s2,simple,2,1002,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,46.3,4,2,8583,290,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s3,simple,2,1002,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,40.3,4,2,8611,300,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s4,simple,2,1002,put a bolt in the red bin,1,bolt3 in red_bin,1,1,ok,83.3,4,2,8510,360,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s5,simple,2,1002,put the green cube in the blue bin,0,none of 1 reached blue_bin,1,0,wrong,85.0,4,2,8570,260,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m1,medium,2,1002,put the leftmost yellow cube in the red bin,1,"cube_yellow_1 in red_bin, others untouched",1,1,ok,89.7,3,2,8486,585,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m2,medium,2,1002,put the rightmost yellow cube in the blue bin,1,"cube_yellow_2 in blue_bin, others untouched",1,1,ok,49.7,4,2,8580,335,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m3,medium,2,1002,put the cube nearest to the robot in the red bin,0,"cube_red_1 placed, but also moved: cube_blue_1, cube_yellow_1",1,0,wrong,663.4,11,10,35608,7065,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m4,medium,2,1002,put both yellow cubes in the blue bin,1,all 2 in blue_bin,1,1,ok,107.8,6,4,14871,510,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m5,medium,2,1002,"put the red cube in the blue bin, then put the blue cube in the red bin",1,cube_red_1 in blue_bin; cube_blue_1 in red_bin,1,1,ok,409.2,11,10,35185,4175,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c1,complex,2,1002,put all the cubes in the blue bin,0,4/5 in blue_bin; not: cube_green_1,1,0,wrong,363.6,13,11,38793,2630,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c2,complex,2,1002,clear the bolts off the table,0,"1/3 in a bin; not: bolt2, bolt3",0,1,wrong,379.7,13,10,34629,2800,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c3,complex,2,1002,put the red one away,1,cube_red_1 in red_bin,1,1,ok,67.8,4,2,8573,370,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c4,complex,2,1002,tidy up the table,0,"2/5 in a bin; not: cube_green_1, cube_yellow_1, cube_yellow_2",0,1,timeout,1771.0,36,34,138057,16070,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c5,complex,2,1002,put the purple cube in the red bin,1,"table unchanged, as required",0,0,ok,97.3,3,1,5221,355,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s1,simple,3,1003,pick up the red cube,0,nothing lifted; highest cube_red_1 at z=0.015,1,0,wrong,79.0,2,1,5465,755,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s2,simple,3,1003,put the red cube in the red bin,0,none of 1 reached red_bin,1,0,wrong,37.8,4,2,8508,345,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s3,simple,3,1003,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,40.3,4,2,8508,290,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s4,simple,3,1003,put a bolt in the red bin,0,none of 3 reached red_bin,1,0,wrong,99.8,4,2,8510,420,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s5,simple,3,1003,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,170.2,4,2,8649,250,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m1,medium,3,1003,put the leftmost yellow cube in the red bin,1,"cube_yellow_1 in red_bin, others untouched",0,0,ok,179.7,,2,5498,205,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m2,medium,3,1003,put the rightmost yellow cube in the blue bin,0,cube_yellow_2 was the right object but is not in blue_bin,1,0,wrong,288.5,5,4,15145,1710,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m3,medium,3,1003,put the cube nearest to the robot in the red bin,1,"cube_green_1 in red_bin, others untouched",1,1,ok,457.9,7,6,20879,3780,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m4,medium,3,1003,put both yellow cubes in the blue bin,1,all 2 in blue_bin,1,1,ok,219.3,6,4,15173,510,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m5,medium,3,1003,"put the red cube in the blue bin, then put the blue cube in the red bin",1,cube_red_1 in blue_bin; cube_blue_1 in red_bin,1,1,timeout,1382.3,29,28,111858,11635,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c1,complex,3,1003,put all the cubes in the blue bin,1,all 5 in blue_bin,1,1,ok,752.9,19,17,62337,4585,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c2,complex,3,1003,clear the bolts off the table,0,"1/3 in a bin; not: bolt2, bolt3",1,0,wrong,388.6,9,8,27695,1760,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c3,complex,3,1003,put the red one away,1,cube_red_1 in red_bin,1,1,ok,131.3,3,2,8447,615,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c4,complex,3,1003,tidy up the table,0,4/5 in a bin; not: cube_green_1,0,1,timeout,2018.8,41,39,166511,23575,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c5,complex,3,1003,put the purple cube in the red bin,1,"table unchanged, as required",0,0,ok,10.2,1,0,2523,175,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s1,simple,4,1004,pick up the red cube,1,cube_red_1 held at z=0.200,1,1,ok,26.0,2,1,5421,185,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s2,simple,4,1004,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,34.7,4,2,8543,275,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s3,simple,4,1004,put the blue cube in the blue bin,0,none of 1 reached blue_bin,1,0,wrong,45.7,4,2,8550,420,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s4,simple,4,1004,put a bolt in the red bin,1,bolt1 in red_bin,1,1,ok,31.9,4,2,8633,305,9,,,,deepinfra,openai/gpt-oss-120b
+naive,s5,simple,4,1004,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,32.1,4,2,8607,210,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m1,medium,4,1004,put the leftmost yellow cube in the red bin,1,"cube_yellow_1 in red_bin, others untouched",1,1,ok,81.5,4,2,8681,445,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m2,medium,4,1004,put the rightmost yellow cube in the blue bin,0,cube_yellow_2 was the right object but is not in blue_bin,1,0,wrong,144.6,8,7,24344,2480,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m3,medium,4,1004,put the cube nearest to the robot in the red bin,1,"cube_yellow_2 in red_bin, others untouched",1,1,ok,58.8,4,2,8575,460,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m4,medium,4,1004,put both yellow cubes in the blue bin,0,1/2 in blue_bin; not: cube_yellow_2,1,0,wrong,109.6,6,4,14932,1060,9,,,,deepinfra,openai/gpt-oss-120b
+naive,m5,medium,4,1004,"put the red cube in the blue bin, then put the blue cube in the red bin",1,cube_red_1 in blue_bin; cube_blue_1 in red_bin,1,1,ok,97.3,5,4,14822,465,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c1,complex,4,1004,put all the cubes in the blue bin,0,4/5 in blue_bin; not: cube_green_1,1,0,wrong,777.6,23,21,77819,9690,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c2,complex,4,1004,clear the bolts off the table,1,all 2 in a bin,1,1,ok,711.4,22,21,79824,12380,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c3,complex,4,1004,put the red one away,1,cube_red_1 in red_bin,1,1,ok,56.1,3,2,8438,730,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c4,complex,4,1004,tidy up the table,0,4/5 in a bin; not: cube_yellow_2,0,1,timeout,1836.4,,21,74141,11805,9,,,,deepinfra,openai/gpt-oss-120b
+naive,c5,complex,4,1004,put the purple cube in the red bin,1,"table unchanged, as required",0,0,ok,73.6,2,0,2656,115,9,,,,deepinfra,openai/gpt-oss-120b
