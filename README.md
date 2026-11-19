@@ -50,7 +50,7 @@ every number below can be recomputed from source.
 | [`latch/`](latch/) | the ROS 2 workspace — build and run from here. Self-contained. |
 | [`latch/src/`](latch/src/) | five packages: the planner, the skill server, perception, the robot description, the MoveIt config. |
 | [`latch/tools/`](latch/tools/) | the benchmark, the dataset pipeline, and the verification scripts. Everything that measures, as opposed to runs. |
-| [`paper/data/`](paper/data/) | the 565 scored trials the results rest on — seven 75-trial runs (five conditions on the superseded detector, LATCH and naive on the corrected one), 20 induced-failure trials, two 10-trial episode runs. |
+| [`paper/data/`](paper/data/) | the 625 scored trials the results rest on — seven 75-trial runs (five conditions on the superseded detector, LATCH and naive on the corrected one), 80 recovery trials (20 from the first run, 60 induced and matched-control trials from the re-run), two 10-trial episode runs. |
 | [`paper/figures/`](paper/figures/) | the script that draws the figures from that data. |
 
 ### Where to start reading
@@ -225,9 +225,9 @@ python3 tools/benchmark.py --no-verify --no-affordance --no-memory \
 
 ### The data
 
-[`paper/data/`](paper/data/) holds all 565 scored trials behind the results —
-the seven 75-trial runs, 20 induced-failure trials, and the two 10-trial
-episode runs. Figures regenerate from them directly:
+[`paper/data/`](paper/data/) holds all 625 scored trials behind the results —
+the seven 75-trial runs, 80 recovery trials, and the two 10-trial episode
+runs. Figures regenerate from them directly:
 
 ```bash
 LATCH_RUNS=paper/data python3 paper/figures/make_figures.py --out paper/figures
