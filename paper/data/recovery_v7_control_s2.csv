@@ -1,0 +1,16 @@
+condition,task,tier,trial,seed,command,success,detail,planner_said,agreement,outcome,wall_s,iterations,tool_calls,in_tokens,out_tokens,objects_in_play,induced,induced_detail,void_reason,backend,model
+control,s2,simple,0,2000,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,143.0,4,2,8913,250,9,,,,deepinfra,openai/gpt-oss-120b
+control,s3,simple,0,2000,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,150.3,4,2,9074,265,9,,,,deepinfra,openai/gpt-oss-120b
+control,s5,simple,0,2000,put the green cube in the blue bin,0,none of 1 reached blue_bin,0,1,wrong,100.5,3,0,2826,150,9,,,,deepinfra,openai/gpt-oss-120b
+control,s2,simple,1,2001,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,144.0,4,2,9266,210,9,,,,deepinfra,openai/gpt-oss-120b
+control,s3,simple,1,2001,put the blue cube in the blue bin,0,none of 1 reached blue_bin,0,1,wrong,42.1,1,0,2643,350,9,,,,deepinfra,openai/gpt-oss-120b
+control,s5,simple,1,2001,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,152.5,4,2,9235,195,9,,,,deepinfra,openai/gpt-oss-120b
+control,s2,simple,2,2002,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,147.0,4,2,9037,190,9,,,,deepinfra,openai/gpt-oss-120b
+control,s3,simple,2,2002,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,140.1,4,2,8934,275,9,,,,deepinfra,openai/gpt-oss-120b
+control,s5,simple,2,2002,put the green cube in the blue bin,0,none of 1 reached blue_bin,0,1,wrong,289.3,7,5,19273,2040,9,,,,deepinfra,openai/gpt-oss-120b
+control,s2,simple,3,2003,put the red cube in the red bin,1,cube_red_1 in red_bin,1,1,ok,84.9,4,2,9370,330,9,,,,deepinfra,openai/gpt-oss-120b
+control,s3,simple,3,2003,put the blue cube in the blue bin,0,none of 1 reached blue_bin,0,1,wrong,19.6,2,0,2815,115,9,,,,deepinfra,openai/gpt-oss-120b
+control,s5,simple,3,2003,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,160.9,6,4,16267,1380,9,,,,deepinfra,openai/gpt-oss-120b
+control,s2,simple,4,2004,put the red cube in the red bin,0,none of 1 reached red_bin,0,1,wrong,12.1,1,0,2544,190,9,,,,deepinfra,openai/gpt-oss-120b
+control,s3,simple,4,2004,put the blue cube in the blue bin,1,cube_blue_1 in blue_bin,1,1,ok,46.5,4,2,8730,285,9,,,,deepinfra,openai/gpt-oss-120b
+control,s5,simple,4,2004,put the green cube in the blue bin,1,cube_green_1 in blue_bin,1,1,ok,135.8,4,2,8688,245,9,,,,deepinfra,openai/gpt-oss-120b
