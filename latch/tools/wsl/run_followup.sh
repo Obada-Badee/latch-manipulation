@@ -145,21 +145,32 @@ PY
 
   recovery)   # ONE cell session; blocks alternate induced / control
     check_weights
-    if ! launch_cell true; then stage "ABORT: cell unhealthy"; exit 1; fi
-    reset_scene
+    # A resumed run keeps a healthy, verified session: the control is only
+    # matched if both arms share one simulator session.
+    if python3 tools/cell_health.py >/dev/null 2>&1 \
+       && ros2 param get /skill_server verify 2>/dev/null | grep -q True; then
+      stage "reusing the running cell (healthy, verify = True)"
+    elif ! launch_cell true; then stage "ABORT: cell unhealthy"; exit 1; fi
+    complete=1
     for s in 1 2; do
       for arm in induced control; do
         flag=""; [ "$arm" = induced ] && flag="--induce"
         csv="runs/recovery_v7_${arm}_s${s}.csv"
+        if [ "$(scored_count "$csv")" -ge 15 ]; then
+          stage "recovery block: $arm seed $s already complete"; continue
+        fi
         resume=""; [ -f "$csv" ] && resume="--resume"
+        reset_scene   # every block: the previous block's last trial leaves objects in bins
         stage "recovery block: $arm seed $s -> $csv"
         python3 -u tools/benchmark.py --backend deepinfra $flag --tasks s2,s3,s5 \
           --trials 5 --seed "$s" --condition "$arm" --out "$csv" $resume \
           >> "$HOME/recovery_v7.log" 2>&1
         stage "block finished (exit $?), $(scored_count "$csv") scored"
+        [ "$(scored_count "$csv")" -ge 15 ] || complete=0
       done
     done
-    stage "RECOVERY COMPLETE" ;;
+    if [ "$complete" = 1 ]; then stage "RECOVERY COMPLETE"
+    else stage "INCOMPLETE: run the same subcommand again to resume"; fi ;;
 
   *) echo "usage: $0 gate [model tag] | naive_v7 | second_model <model> <tag> | recovery"
      exit 2 ;;
